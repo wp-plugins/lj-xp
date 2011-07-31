@@ -1,5 +1,5 @@
 === Plugin Name ===
-Contributors: CorneliousJD, FreeAtNet, EBroder, Sillybean
+Contributors: CorneliousJD, freeatnet, EBroder, sillybean
 Donate link: http://code.google.com/p/ljxp/
 Tags: livejournal, lj, crosspost
 Requires at least: 2.8
