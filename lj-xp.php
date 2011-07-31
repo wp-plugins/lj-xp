@@ -1,489 +1,80 @@
 <?php
 /*
 Plugin Name: LiveJournal Crossposter
-Plugin URI: http://www.lj-xp.com
-Description: Automatically crossposts your WP entries to your LiveJournal or LJ based clone.
-Version: 2.0.6
-Author: Corey DeGrandchamp, Arseniy Ivanov
-Author URI: http://techjawa.com/
-
-	Copyright (c) 2007 Evan Broder
-	Copyright (c) 2008 Arseniy Ivanov
-	Copyright (c) 2009 Corey DeGrandchamp
-
-	Permission is hereby granted, free of charge, to any person obtaining a
-	copy of this software and associated documentation files (the "Software"),
-	to deal in the Software without restriction, including without limitation
-	the rights to use, copy, modify, merge, publish, distribute, sublicense,
-	and/or sell copies of the Software, and to permit persons to whom the
-	Software is furnished to do so, subject to the following conditions:
-
-	The above copyright notice and this permission notice shall be included in
-	all copies or substantial portions of the Software.
-
-	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-	FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-	DEALINGS IN THE SOFTWARE.
+Plugin URI: http://code.google.com/p/ljxp/
+Description: Automatically copies all posts to a LiveJournal or other LiveJournal-based blog. Editing or deleting a post will be replicated as well.
+Version: 2.1.1
+Author: Arseniy Ivanov, Evan Broder, Corey DeGrandchamp, Stephanie Leary
+Author URI: http://code.google.com/p/ljxp/
 */
 
-define('LJXP_DOMAIN', '/ljxp/lang/ljxp');
-load_plugin_textdomain(LJXP_DOMAIN);
+/*
+SCL TODO:
+- add option for private posts, then add private posts to ljxp_post_all()
+- use built-in WP stuff for curl (search SCL)
+- Fix comments display -- A-Bishop's code is trying to load wp-config directly; stop that
+/**/
 
 require_once(ABSPATH . '/wp-includes/class-IXR.php');
-
 require(ABSPATH . '/wp-includes/version.php');
 
-if((bool)version_compare($wp_version, '2.5', '<')  && file_exists(ABSPATH . '/wp-includes/template-links.php')) {
-	require_once(ABSPATH . '/wp-includes/template-links.php');
+// ---- Settings API -----
+require_once ('lj-xp-options.php');
+
+// set default options 
+function ljxp_set_defaults() {
+	$options = ljxp_get_options();
+	add_option( 'ljxp', $options, '', 'no' );
+}
+register_activation_hook(__FILE__, 'ljxp_set_defaults');
+
+//register our settings
+function register_ljxp_settings() {
+	register_setting( 'ljxp', 'ljxp', 'ljxp_validate_options');
 }
 
-// Simulate wp-lj-comments by A-Bishop:
-
-if(!function_exists('lj_comments')){
-	function lj_comments($post_id){
-        $link = "http://".$hostname = getenv("HTTP_HOST")."/wp-lj-comments.php?post_id=".$post_id;
-		return '<img src="'.$link.'" border="0">';
-	}
+// when uninstalled, remove option
+function ljxp_remove_options() {
+	delete_option('ljxp');
+	delete_option('ljxp_error_notice');
+	delete_option('lj_xp_error_notice');
 }
-
-// Create the LJXP Options Page
-function ljxp_add_pages() {
-	add_options_page("LiveJournal", "LiveJournal", 6, __FILE__, 'ljxp_display_options');
-}
-
-// Display the options page
-function ljxp_display_options() {
-	global $wpdb;
-
-
-	// List all options to load
-	$option_list = array(	'ljxp_host'		=> 'www.livejournal.com',
-				'ljxp_username'		=> '',
-				'ljxp_password'		=> '',
-				'ljxp_custom_name_on'	=> false,
-				'ljxp_custom_name'	=> '',
-				'ljxp_privacy'		=> 'public',
-				'ljxp_comments'		=> 0,
-				'ljxp_tag'		=> '1',
-				'ljxp_more'		=> 'link',
-				'ljxp_community'	=> '',
-				'ljxp_skip_cats'	=> array(),
-				'ljxp_header_loc'	=> 0,		// 0 means top, 1 means bottom
-				'ljxp_custom_header'	=> '', ); // I love trailing commas
-
-
-	// Options to be filtered with 'stripslashes'
-	$option_stripslash = array('ljxp_host', 'ljxp_username', 'ljxp_custom_name', 'ljxp_community', 'ljxp_custom_header', );
-
-	foreach($option_list as $_opt => $_default){
-		add_option($_opt); // Just in case it does not exist
-		$options[$_opt] =(in_array($_opt, $option_stripslash) ? stripslashes(get_option($_opt))  : get_option($_opt));  // Listed in $option_stripslash? Filter : Give away
-
-		// If the option remains empty, set it to the default
-		if($options[$_opt] == '' && $_default !== ''){
-			update_option($_opt, $_default);
-			$options[$_opt] = $_default;
-		}
-
-	}
-
-
-	// If we're handling a submission, save the data
-	if(isset($_REQUEST['update_lj_options']) || isset($_REQUEST['crosspost_all'])) {
-		// Grab a list of all entries that have been crossposted
-		$repost_ids = $wpdb->get_col("SELECT post_id FROM $wpdb->postmeta WHERE meta_key='ljID'");
-
-		// Set the update flag
-		$need_update = 0;
-
-		/*
-		*   Warning. This is rather UNSAFE code. The only reason for it to remain unchanged so far is that it is inside a protected area. -- FreeAtNet
-		*	TODO: fix security where appropriate
-		*/
-
-		$request_names = array('ljxp_host' 				=> 'host',
-								'ljxp_username' 		=> 'username',
-								'ljxp_custom_name_on'	=> 'custom_name_on',
-								'ljxp_custom_name'		=> 'custom_name',
-								'ljxp_privacy'			=> 'privacy',
-								'ljxp_comments'			=> 'comments',
-								'ljxp_tag'				=> 'tag',
-								'ljxp_more'				=> 'more',
-								'ljxp_community'		=> 'community',
-								'ljxp_header_loc'		=> 'header_loc',
-								'ljxp_custom_header'	=> 'custom_header',
-								);
-
-		foreach($request_names as $_orig => $_reqname){
-			if(isset($_REQUEST[$_reqname]) && $_REQUEST[$_reqname] != $options[$_orig]){
-				// Do the general stuff
-				update_option($_orig, $_REQUEST[$_reqname]);
-				$options[$_orig] = $_REQUEST[$_reqname]; // TODO: xss_clean($_REQUEST[$_reqname])
-
-				// And then the custom actions
-				switch($_orig){ // this is kinda harsh, I guess
-					case 'ljxp_post' :
-					case 'ljxp_username' :
-					case 'ljxp_comments' :
-					case 'ljxp_community' :
-							ljxp_delete_all($repost_ids);
-					case 'ljxp_custom_name_on' :
-					case 'ljxp_privacy' :
-					case 'ljxp_tag' :
-					case 'ljxp_more' :
-					case 'ljxp_custom_header' :
-							$need_update = 1;
-						break;
-					case 'ljxp_custom_name' :
-							if($options['ljxp_custom_name']) {
-								$need_update = 1;
-							}
-						break;
-					default:
-							continue;
-						break;
-				}
-			}
-		}
-
-		sort($options['ljxp_skip_cats']);
-		$new_skip_cats = array_diff(get_all_category_ids(), (array)$_REQUEST['post_category']);
-		sort($new_skip_cats);
-		if($options['ljxp_skip_cats'] != $new_skip_cats) {
-			update_option('ljxp_skip_cats', $new_skip_cats);
-			$options['ljxp_skip_cats'] = $new_skip_cats;
-		}
-
-		unset($new_skip_cats);
-
-		if($_REQUEST['password'] != "") {
-			update_option('ljxp_password', md5($_REQUEST['password']));
-		}
-
-		if($need_update && isset($_REQUEST['update_lj_options'])) {
-			@set_time_limit(0);
-			ljxp_post_all($repost_ids);
-		}
-
-		if(isset($_REQUEST['crosspost_all'])) {
-			@set_time_limit(0);
-			ljxp_post_all($wpdb->get_col("SELECT ID FROM $wpdb->posts WHERE post_status='publish' AND post_type='post'"));
-		}
-
-		// Copied from another options page
-		echo '<div id="message" class="updated fade"><p><strong>';
-		_e('Options saved.', LJXP_DOMAIN);
-		echo '</strong></p></div>';
-	}
-
-	// And, finally, output the form
-	// May add some Javascript to disable the custom_name field later - don't
-	// feel like it now, though
-?>
-<div class="wrap">
-	<form method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
-		<h2><?php _e('LiveJournal Crossposter Options', LJXP_DOMAIN); ?></h2>
-		<table width="100%" cellspacing="2" cellpadding="5" class="editform">
-			<tr valign="top">
-				<th width="33%" scope="row"><?php _e('LiveJournal-compliant host:', LJXP_DOMAIN) ?></th>
-				<td><input name="host" type="text" id="host" value="<?=htmlentities($options['ljxp_host']); ?>" size="40" /><br />
-				<?php
-
-				_e('If you are using a LiveJournal-compliant site other than LiveJournal (like DeadJournal), enter the domain name here. LiveJournal users can use the default value', LJXP_DOMAIN);
-
-				?>
-				</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row"><?php _e('LJ Username', LJXP_DOMAIN); ?></th>
-				<td><input name="username" type="text" id="username" value="<?=htmlentities($options['ljxp_username'], ENT_COMPAT, 'UTF-8'); ?>" size="40" /></td>
-			</tr>
-			<tr valign="top">
-				<th scope="row"><?php _e('LJ Password', LJXP_DOMAIN); ?></th>
-				<td><input name="password" type="password" id="password" value="" size="40" /><br />
-				<?php
-
-				_e('Only enter a value if you wish to change the stored password. Leaving this field blank will not erase any passwords already stored.', LJXP_DOMAIN);
-
-				?>
-				</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row"><?php _e('Community', LJXP_DOMAIN); ?></th>
-				<td><input name="community" type="text" id="community" value="<?=htmlentities($options['ljxp_community'], ENT_COMPAT, 'UTF-8'); ?>" size="40" /><br />
-				<?php
-
-				_e("If you wish your posts to be copied to a community, enter the community name here. Leaving this space blank will copy the posts to the specified user's journal instead", LJXP_DOMAIN);
-
-				?>
-				</td>
-			</tr>
-		</table>
-		<fieldset class="options">
-			<legend><?php _e('Blog Header', LJXP_DOMAIN); ?></legend>
-			<table width="100%" cellspacing="2" cellpadding="5" class="editform">
-				<tr valign="top">
-					<th width="33%" scope="row"><?php _e('Crosspost header/footer location', LJXP_DOMAIN); ?></th>
-					<td>
-					<label>
-						<input name="header_loc" type="radio" value="0" <?php checked($options['ljxp_header_loc'], 0); ?>/>
-						<?php _e('Top of post', LJXP_DOMAIN); ?>
-					</label>
-					<br />
-					<label>
-						<input name="header_loc" type="radio" value="1" <?php checked($options['ljxp_header_loc'], 1); ?> /> <? _e('Bottom of post', LJXP_DOMAIN); ?></label></td>
-				</tr>
-				<tr valign="top">
-					<th scope="row"><?php _e('Set blog name for crosspost header/footer', LJXP_DOMAIN); ?></th>
-					<td>
-						<label>
-							<input name="custom_name_on" type="radio" value="0" <?php checked($options['ljxp_custom_name_on'], 0); ?>/>
-							<?php printf(__('Use the title of your blog (%s)', LJXP_DOMAIN), get_settings('blogname')); ?>
-						</label>
-						<br />
-						<label>
-							<input name="custom_name_on" type="radio" value="1" <?php checked($options['ljxp_custom_name_on'], 1); ?>/>
-							<? _e('Use a custom title', LJXP_DOMAIN); ?>
-						</label>
-					</td>
-				</tr>
-				<tr valign="top">
-					<th scope="row"><?php _e('Custom blog title', LJXP_DOMAIN); ?></th>
-					<td><input name="custom_name" type="text" id="custom_name" value="<?=htmlentities($options['ljxp_custom_name'], ENT_COMPAT, 'UTF-8'); ?>" size="40" /><br />
-					<?php
-
-					_e('If you chose to use a custom title above, enter the title here. This will be used in the header which links back to this site at the top of each post on the LiveJournal.', LJXP_DOMAIN);
-
-					?>
-					</td>
-				</tr>
-				<tr valign="top">
-					<th scope="row"><?php _e('Custom crosspost header/footer', LJXP_DOMAIN); ?></th>
-					<td><textarea name="custom_header" id="custom_header" rows="3" cols="40"><?=htmlentities($options['ljxp_custom_header'], ENT_COMPAT, 'UTF-8'); ?></textarea><br />
-					<?php
-
-					_e("If you wish to use LJXP's dynamically generated post header/footer, you can ignore this setting. If you don't like the default crosspost header/footer, specify your own here. For flexibility, you can choose from a series of case-sensitive substitution strings, listed below:", LJXP_DOMAIN);
-
-					?>
-					<dl>
-						<dt>[blog_name]</dt>
-						<dd><?php _e('The title of your blog, as specified above', LJXP_DOMAIN); ?></dd>
-
-						<dt>[blog_link]</dt>
-						<dd><?php _e("The URL of your blog's homepage", LJXP_DOMAIN); ?></dd>
-
-						<dt>[permalink]</dt>
-						<dd><?php _e('A permanent URL to the post being crossposted', LJXP_DOMAIN); ?></dd>
-
-						<dt>[comments_link]</dt>
-						<dd><?php _e('The URL for comments. Generally this is the permalink URL with #comments on the end', LJXP_DOMAIN); ?></dd>
-
-						<dt>[tags]</dt>
-						<dd><?php _e('Tags with links list for the post', LJXP_DOMAIN); ?></dd>
-
-						<dt>[categories]</dt>
-						<dd><?php _e('Categories with links list for the post', LJXP_DOMAIN); ?></dd>
-
-						<dt>[comments_count]</dt>
-						<dd><?php _e('An image containing a comments counter', LJXP_DOMAIN); ?></dd>
-
-					</dl>
-					</td>
-			</table>
-		</fieldset>
-		<fieldset class="options">
-			<legend><?php _e('Post Privacy', LJXP_DOMAIN); ?></legend>
-			<table width="100%" cellspacing="2" cellpadding="5" class="editform">
-				<tr valign="top">
-					<th width="33%" scope="row"><?php _e('Privacy level for all posts to LiveJournal', LJXP_DOMAIN); ?></th>
-					<td>
-						<label>
-							<input name="privacy" type="radio" value="public" <?php checked($options['ljxp_privacy'], 'public'); ?>/>
-							<?php _e('Public', LJXP_DOMAIN); ?>
-						</label>
-						<br />
-						<label>
-							<input name="privacy" type="radio" value="private" <?php checked($options['ljxp_privacy'], 'private'); ?> />
-							<?php _e('Private', LJXP_DOMAIN); ?>
-						</label>
-						<br />
-						<label>
-							<input name="privacy" type="radio" value="friends" <?php checked($options['ljxp_privacy'], 'friends'); ?>/>
-							<?php _e('Friends only', LJXP_DOMAIN); ?>
-						</label>
-						<br />
-					</td>
-				</tr>
-			</table>
-		</fieldset>
-		<fieldset class="options">
-			<legend><?php _e('LiveJournal Comments', LJXP_DOMAIN); ?></legend>
-			<table width="100%" cellspacing="2" cellpadding="5" class="editform">
-				<tr valign="top">
-					<th width="33%" scope="row"><?php _e('Should comments be allowed on LiveJournal?', LJXP_DOMAIN); ?></th>
-					<td>
-					<label>
-						<input name="comments" type="radio" value="0" <?php checked($options['ljxp_comments'], 0); ?>/>
-						<?php _e('Require users to comment on WordPress', LJXP_DOMAIN); ?>
-					</label>
-					<br />
-					<label>
-						<input name="comments" type="radio" value="1" <?php checked($options['ljxp_comments'], 1); ?>/>
-						<?php _e('Allow comments on LiveJournal', LJXP_DOMAIN); ?>
-					</label>
-					<br />
-				</tr>
-			</table>
-		</fieldset>
-		<fieldset class="options">
-			<legend><?php _e('LiveJournal Tags', LJXP_DOMAIN); ?></legend>
-			<table width="100%" cellspacing="2" cellpadding="5" class="editform">
-				<tr valign="top">
-					<th width="33% scope="row"><?php _e('Tag entries on LiveJournal?', LJXP_DOMAIN); ?></th>
-					<td>
-					<?php
-						/* PHP-only comment:
-						 *
-						 * Yes, 1 -> 3 -> 2 -> 0 is a wierd order, but
-						 * if categories = 1 and tags = 2,
-						 * nothing would equal 0
-						 * and
-						 * tags+categories = 3
-						 */
-					?>
-						<label>
-							<input name="tag" type="radio" value="1" <?php checked($options['ljxp_tag'], 1); ?>/>
-							<?php _e('Tag LiveJournal entries with WordPress categories only', LJXP_DOMAIN); ?>
-						</label>
-						<br />
-						<label>
-							<input name="tag" type="radio" value="3" <?php checked($options['ljxp_tag'], 3); ?>/>
-							<?php _e('Tag LiveJournal entries with WordPress categories and tags', LJXP_DOMAIN); ?>
-						</label>
-						<br />
-						<label>
-							<input name="tag" type="radio" value="2" <?php checked($options['ljxp_tag'], 2); ?>/>
-							<?php _e('Tag LiveJournal entries with WordPress tags only', LJXP_DOMAIN); ?>
-						</label>
-						<br />
-						<label>
-							<input name="tag" type="radio" value="0" <?php checked($options['ljxp_tag'], 0); ?>/>
-							<?php _e('Do not tag LiveJournal entries', LJXP_DOMAIN); ?>
-						</label>
-						<br />
-						<?php
-						_e('You may with to disable this feature if you are posting in an alphabet other than the Roman alphabet. LiveJournal does not seem to support non-Roman alphabets in tag names.', LJXP_DOMAIN);
-						?>
-					</td>
-				</tr>
-			</table>
-		</fieldset>
-		<fieldset class="options">
-			<legend><?php _e('Handling of &lt;!--More--&gt;', LJXP_DOMAIN); ?></legend>
-			<table width="100%" cellspacing="2" cellpadding="5" class="editform">
-				<tr valign="top">
-					<th width="33%" scope="row"><?php _e('How should LJXP handle More tags?', LJXP_DOMAIN); ?></th>
-					<td>
-						<label>
-							<input name="more" type="radio" value="link" <?php checked($options['ljxp_more'], 'link'); ?>/>
-							<?php _e('Link back to WordPress', LJXP_DOMAIN); ?>
-						</label>
-						<br />
-						<label>
-							<input name="more" type="radio" value="lj-cut" <?php checked($options['ljxp_more'], 'lj-cut'); ?>/>
-							<?php _e('Use an lj-cut', LJXP_DOMAIN); ?>
-						</label>
-						<br />
-						<label>
-							<input name="more" type="radio" value="copy" <?php checked($options['ljxp_more'], 'copy'); ?>/>
-							<?php _e('Copy the entire entry to LiveJournal', LJXP_DOMAIN); ?>
-						</label>
-						<br />
-					</td>
-				</tr>
-			</table>
-		</fieldset>
-		<fieldset class="options">
-			<legend><?php _e('Category Selection', LJXP_DOMAIN); ?></legend>
-			<table width="100%" cellspacing="2" cellpadding="5" class="editform">
-				<tr valign="top">
-					<th width="33%" scope="row"><?php _e('Select which categories should be crossposted', LJXP_DOMAIN); ?></th>
-					<td>
-					<?php
-					( function_exists('write_nested_categories') ?
-						write_nested_categories(ljxp_cat_select(get_nested_categories(), $options['ljxp_skip_cats']))
-						: wp_category_checklist(false, false, array_diff(get_all_category_ids(), (array)$options['ljxp_skip_cats']))
-					);
-					?><br />
-					<?php
-
-					_e('Any post that has <em>at least one</em> of the above categories selected will be crossposted.');
-
-					?>
-					</td>
-				</tr>
-			</table>
-		</fieldset>
-		<p class="submit">
-			<input type="submit" name="crosspost_all" value="<?php _e('Update Options and Crosspost All WordPress entries', LJXP_DOMAIN); ?>" />
-			<input type="submit" name="update_lj_options" value="<?php _e('Update Options'); ?>" style="font-weight: bold;" />
-		</p>
-	</form>
-</div>
-<?php
-}
-
-function ljxp_cat_select($cats, $selected_cats) {
-	foreach((array)$cats as $key=>$cat) {
-		$cats[$key]['checked'] = !in_array($cat['cat_ID'], $selected_cats);
-		$cats[$key]['children'] = ljxp_cat_select($cat['children'], $selected_cats);
-	}
-	return $cats;
-}
+register_uninstall_hook( __FILE__, 'ljxp_remove_options' );
+// for testing only
+// register_deactivation_hook( __FILE__, 'ljxp_remove_options' );
 
 function ljxp_post($post_id) {
 	global $wpdb, $tags, $cats; // tags/cats are going to be filtered thru an external function
+	$options = ljxp_get_options();
+	$errors = array();
+	
+	// Get postmeta overrides
+	$privacy = get_post_meta($post_id, 'ljxp_privacy', true);
+	if (isset($privacy) && $privacy != 0) $options['privacy'] = $privacy;
+	$comments = get_post_meta($post_id, 'ljxp_comments', true);
+	if (isset($comments) && $comments != 0) $options['comments'] = $comments;
 
-	// If the post was manually set to not be crossposted, give up now
-	if(get_post_meta($post_id, 'no_lj', true)) {
+	if (!is_array($options['skip_cats'])) $options['skip_cats'] = array();
+	$options['copy_cats'] = array_diff(get_all_category_ids(), $options['skip_cats']);
+		
+	// If the post was manually set to not be crossposted, or nothing was set and the default is not to crosspost, give up now
+	if (0 == $options['crosspost'] || get_post_meta($post_id, 'no_lj', true)) {
 		return $post_id;
 	}
-
-	// Get the relevent info out of the database
-	$options = array(
-						'host' => stripslashes(get_option('ljxp_host')),
-						'user' => stripslashes(get_option('ljxp_username')),
-						'pass' => get_option('ljxp_password'),
-						'custom_name_on' => get_option('ljxp_custom_name_on'),
-						'custom_name' => stripslashes(get_option('ljxp_custom_name')),
-						'privacy' => ( (get_post_meta($post_id, 'ljxp_privacy', true) != 0) ?
-									get_post_meta($post_id, 'ljxp_privacy', true) :
-										get_option('ljxp_privacy') ),
-						'comments' => ( (get_post_meta($post_id, 'ljxp_comments', true != 0) ) ? ( 2 - get_post_meta($post_id, 'ljxp_comments', true) ) : get_option('ljxp_comments') ),
-						'tag' => get_option('ljxp_tag'),
-						'more' => get_option('ljxp_more'),
-						'community' => stripslashes(get_option('ljxp_community')),
-						'skip_cats' => get_option('ljxp_skip_cats'),
-						'copy_cats' => array_diff(get_all_category_ids(), get_option('ljxp_skip_cats')),
-						'header_loc' => get_option('ljxp_header_loc'),
-						'custom_header' => stripslashes(get_option('ljxp_custom_header')),
-	);
-
-
 
 	// If the post shows up in the forbidden category list and it has been
 	// crossposted before (so the forbidden category list must have changed),
 	// delete the post. Otherwise, just give up now
 	$do_crosspost = 0;
 
-	foreach(wp_get_post_cats(1, $post_id) as $cat) {
+	$postcats = wp_get_post_categories($post_id);
+	foreach($postcats as $cat) {
 		if(in_array($cat, $options['copy_cats'])) {
 			$do_crosspost = 1;
 			break; // decision made and cannot be altered, fly on
+		}
+		else {
+			$errors['nocats'] = 'This post was not in any of the right categories, so it was not crossposted.';
 		}
 	}
 
@@ -498,24 +89,20 @@ function ljxp_post($post_id) {
 	// Using challenge for the most security. Allows pwd hash to be stored
 	// instead of pwd
 	if (!$client->query('LJ.XMLRPC.getchallenge')) {
-		wp_die('Something went wrong - '.$client->getErrorCode().' : '.$client->getErrorMessage());
+		$errors[$client->getErrorCode()] = $client->getErrorMessage();
 	}
 
 	// And retrieve the challenge string
 	$response = $client->getResponse();
 	$challenge = $response['challenge'];
 
-	$post = & get_post($post_id);
+	$post = &get_post($post_id);
 
 	// Insert the name of the page we're linking back to based on the options set
-	if(!$options['custom_name_on']) {
-		$blogName = get_option("blogname");
-	}
-	else {
+	if (empty($options['custom_name_on']))
+		$blogName = get_bloginfo('name');
+	else
 		$blogName = $options['custom_name'];
-	}
-
-
 
 	// Tagging and categorizing — for LJ tags
 	// Not to be moved down: the else case of custom header is using $cats and $tags
@@ -523,8 +110,7 @@ function ljxp_post($post_id) {
 	$cats = array();
 	$tags = array();
 
-	$cats = wp_get_post_categories($post_id, array('fields' => 'all')); // wp_get_post_cats is deprecated as of WP2.5
-																		// the new function can get names itself, too
+	$cats = wp_get_post_categories($post_id, array('fields' => 'all')); 
 	$tags = wp_get_post_tags($post_id, array('fields' => 'all'));
 
 
@@ -553,40 +139,45 @@ function ljxp_post($post_id) {
 	}
 
 	if($options['custom_header'] == '') {
-		$postHeader = '<p style="border: 1px solid black; padding: 3px;"><strong>';
+		$postHeader = '<p><small>';
 
 		// If the post is not password protected, follow standard procedure
 		if(!$post->post_password) {
-			$postHeader .= __('Originally published at', LJXP_DOMAIN);
+			$postHeader .= __('Originally published at', 'lj-xp');
 			$postHeader .= ' <a href="'.get_permalink($post_id).'">';
 			$postHeader .= $blogName;
 			$postHeader .= '</a>.';
 		}
 		// If the post is password protected, put up a special message
 		else {
-			$postHeader .= __('This post is password protected. You can read it at', LJXP_DOMAIN);
+			$postHeader .= __('This post is password protected. You can read it at', 'lj-xp');
 			$postHeader .= ' <a href="'.get_permalink($post_id).'">';
 			$postHeader .= $blogName;
 			$postHeader .= '</a>, ';
-			$postHeader .= __('where it was originally posted', LJXP_DOMAIN);
+			$postHeader .= __('where it was originally posted', 'lj-xp');
 			$postHeader .= '.';
 		}
 
 		// Depending on whether comments or allowed or not, alter the header
 		// appropriately
 		if($options['comments']) {
-			$postHeader .= sprintf(__(' You can comment here or <a href="%s#comments">there</a>.', LJXP_DOMAIN), get_permalink($post_id));
+			$postHeader .= sprintf(__(' You can comment here or <a href="%s">there</a>.', 'lj-xp'), get_permalink($post_id).'#comments');
 		}
 		else {
-			$postHeader .= sprintf(__(' Please leave any <a href="%s#comments">comments</a> there.', LJXP_DOMAIN), get_permalink($post_id));
+			$postHeader .= sprintf(__(' Please leave any <a href="%s">comments</a> there.', 'lj-xp'), get_permalink($post_id).'#comments');
 		}
 
-		$postHeader .= '</strong></p>';
+		$postHeader .= '</small></p>';
 	}
 	else {
 		$postHeader = $options['custom_header'];
 
-
+		// find [author]
+		$thepost = get_post($postid);
+		$userid = $thepost->post_author;
+		$author = get_userdata( $userid );
+		$author = $author->display_name;
+		
 		// pre-post formatting for tags and categories
 		$htags = '';
 		$hcats = '';
@@ -597,8 +188,8 @@ function ljxp_post($post_id) {
 		$htags = implode(', ', (array)$htags);
 		$hcats = implode(', ', (array)$hcats);
 
-		$find = array('[blog_name]', '[blog_link]', '[permalink]', '[comments_link]', '[comments_count]', '[tags]', '[categories]');
-		$replace = array($blogName, get_settings('home'), get_permalink($post_id), get_permalink($post_id).'#comments', lj_comments($post_id), $htags, $hcats);
+		$find = array('[blog_name]', '[blog_link]', '[permalink]', '[comments_link]', '[comments_count]', '[tags]', '[categories]', '[author]');
+		$replace = array($blogName, get_option('home'), get_permalink($post_id), get_permalink($post_id).'#comments', lj_comments($post_id), $htags, $hcats, $author);
 		$postHeader = str_replace($find, $replace, $postHeader);
 	}
 
@@ -608,28 +199,40 @@ function ljxp_post($post_id) {
 	// and if the post isn't password protected, we need to put together the
 	// actual post
 	if(!$post->post_password) {
-		// and if there's no <!--more--> tag, we can spit it out and go on our
-		// merry way
-		if(strpos($post->post_content, "<!--more-->") === false) {
-			$the_event .= apply_filters('the_content', $post->post_content);
-		}
+		if ($options['content'] == 'excerpt')
+			$the_event = apply_filters('the_excerpt', $post->post_excerpt);
 		else {
-			$content = explode("<!--more-->", $post->post_content, 2);
-			$the_event .= apply_filters('the_content', $content[0]);
-			switch($options['more']) {
-			case "copy":
-				$the_event .= apply_filters('the_content', $content[1]);
-				break;
-			case "link":
-				$the_event .= sprintf('<p><a href="%s#more-%s">', get_permalink($post_id), $post_id) .
-					__('Read the rest of this entry &raquo;', LJXP_DOMAIN) .
-					'</a></p>';
-				break;
-			case "lj-cut":
-				$the_event .= '<lj-cut text="' .
-					__('Read the rest of this entry &amp;raquo;', LJXP_DOMAIN) .
-					'">' . apply_filters('the_content', $content[1]) . '</lj-cut>';
-				break;
+			// and if there's no <!--more--> tag, we can spit it out and go on our merry way
+			// after we fix [gallery] IDs, which must happen before 'the_content' filters
+			$the_content = $post->post_content;
+			$the_content = str_replace('[gallery', '[gallery id="'.$post->ID.'" ', $the_content);
+			$the_content = apply_filters('the_content', $the_content);
+			$the_content = str_replace(']]>', ']]&gt;', $the_content);
+			$the_content = apply_filters('ljxp_pre_process_post', $the_content);
+		
+			if(strpos($the_content, "<!--more") === false) {
+				$the_event .= $the_content;
+			}
+			else {
+				$content = explode("<!--more", $the_content, 2);
+				$split_content = explode("-->", $content[1], 2);
+				$content[1] = $split_content[1];
+				$more_text = trim( $split_content[0] );
+				if (empty($more_text) )  
+					$more_text = $options['cut_text'];
+				$the_event .= $content[0];
+				switch ($options['more']) {
+					case "copy":
+						$the_event .= $content[1];
+						break;
+					case "link":
+						$the_event .= sprintf('<p><a href="%s#more-%s">', get_permalink($post_id), $post_id) .
+							$more_text . '</a></p>';
+						break;
+					case "lj-cut":
+						$the_event .= '<lj-cut text="'.$more_text.'">'.$content[1].'</lj-cut>';
+						break;
+				}
 			}
 		}
 	}
@@ -650,11 +253,11 @@ function ljxp_post($post_id) {
 	// Get a timestamp for retrieving dates later
 	$date = strtotime($post->post_date);
 
-	$args = array('username'			=> $options['user'],
+	$args = array('username'			=> $options['username'],
 					'auth_method'		=> 'challenge',
 					'auth_challenge'	=> $challenge,
-					'auth_response'		=> md5($challenge . $options['pass']),	// By spec, auth_response is md5(challenge + md5(pass))
-					'ver'				=> '1', 	// Receive UTF-8 instead of ISO-8859-1
+					'auth_response'		=> md5($challenge . $options['password']),	// By spec, auth_response is md5(challenge + md5(pass))
+					'ver'				=> '1',		// Receive UTF-8 instead of ISO-8859-1
 					'event'				=> $the_event,
 					'subject'			=> apply_filters('the_title', $post->post_title),
 					'year'				=> date('Y', $date),
@@ -667,9 +270,11 @@ function ljxp_post($post_id) {
 												 'opt_backdated'	=> !($post_id == $recent_id), // prevent updated
 																	// post from being show on top
 												'taglist'			=> ($options['tag'] != 0 ? $cat_string : ''),
+												'picture_keyword'		=> (!empty($options['userpic']) ? $options['userpic'] : ''),
 												),
-					'usejournal'		=> (!empty($options['community']) ? $options['community'] : $options['user']),
+					'usejournal'		=> (!empty($options['community']) ? $options['community'] : $options['username']),
 					);
+
 	// Set the privacy level according to the settings
 	switch($options['privacy']) {
 		case "public":
@@ -699,14 +304,17 @@ function ljxp_post($post_id) {
 
 	// And awaaaayyy we go!
 	if (!$client->query($method, $args)) {
-		wp_die('Something went wrong - '.$client->getErrorCode().' : '.$client->getErrorMessage());
+		$errors[$client->getErrorCode()] = $client->getErrorMessage();
 	}
+
+	// If there were errors, store them
+	update_option('ljxp_error_notice', $errors);
 
 	// If we were making a new post on LJ, we need the itemid for future reference
 	if('LJ.XMLRPC.postevent' == $method) {
 		$response = $client->getResponse();
 		// Store it to the metadata
-		add_post_meta($post_id, 'ljID', $response['itemid']);
+		add_post_meta($post_id, 'ljID', $response['itemid'], true);
 	}
 	// If you don't return this, other plugins and hooks won't work
 	return $post_id;
@@ -716,6 +324,8 @@ function ljxp_delete($post_id) {
 	// Pull the post_id
 	$ljxp_post_id = get_post_meta($post_id, 'ljID', true);
 
+	$errors = array();
+
 	// Ensures that there's actually a value. If the post was never
 	// cross-posted, the value wouldn't be set, and there's no point in
 	// deleting entries that don't exist
@@ -723,17 +333,14 @@ function ljxp_delete($post_id) {
 		return $post_id;
 	}
 
-	// Get the necessary login info
-	$host = get_option('ljxp_host');
-	$user = get_option('ljxp_username');
-	$pass = get_option('ljxp_password');
-
+	$options = ljxp_get_options();
+	
 	// And open the XMLRPC interface
-	$client = new IXR_Client($host, '/interface/xmlrpc');
+	$client = new IXR_Client($options['host'], '/interface/xmlrpc');
 
 	// Request the challenge for authentication
 	if (!$client->query('LJ.XMLRPC.getchallenge')) {
-		wp_die('Something went wrong - '.$client->getErrorCode().' : '.$client->getErrorMessage());
+		$errors[$client->getErrorCode()] = $client->getErrorMessage();
 	}
 
 	// And retrieve the challenge that LJ returns
@@ -745,10 +352,10 @@ function ljxp_delete($post_id) {
 	// entry. Really rather klunky way of doing things, but not my code!
 	$args = array(
 
-				'username' => $user,
+				'username' => $options['username'],
 				'auth_method' => 'challenge',
 				'auth_challenge' => $challenge,
-				'auth_response' => md5($challenge . $pass),
+				'auth_response' => md5($challenge . $options['password']),
 				'itemid' => $ljxp_post_id,
 				'event' => "",
 				'subject' => "Delete this entry",
@@ -763,11 +370,11 @@ function ljxp_delete($post_id) {
 
 
 	// And awaaaayyy we go!
-	if (!$client->query('LJ.XMLRPC.editevent', $args)) {
-		wp_die('Something went wrong - '.$client->getErrorCode().' : '.$client->getErrorMessage());
-	}
+	if (!$client->query('LJ.XMLRPC.editevent', $args))
+		$errors[$client->getErrorCode()] = $client->getErrorMessage();
 
 	delete_post_meta($post_id, 'ljID');
+	update_option('ljxp_error_notice', $errors );
 
 	return $post_id;
 }
@@ -798,62 +405,139 @@ function ljxp_edit($post_id) {
 	return $post_id;
 }
 
+function ljxp_error_notice() {
+	$errors = get_option('ljxp_error_notice');
+	if (!empty($errors)) { 
+    	add_action('admin_notices', 'lj_xp_print_notices');
+	}
+}
+
+function lj_xp_print_notices() {
+	$errors = get_option('ljxp_error_notice');
+	$options = ljxp_get_options();
+	$class = 'updated';
+	if (!empty($errors) && $_GET['action'] == 'edit') { // show this only after we've posted something
+		foreach ($errors as $code => $error) {
+			$code = trim( (string)$code);
+			switch ($code) {
+				case '-32300' :
+					$msg .= sprintf(__('Could not connect to %s. This post has not been crossposted. (%s : %s)', 'lj-xp'), $options['host'], $code, $error );
+					$class = 'error';
+					break;
+				case '-32701' :
+				case '-32702' :
+					$msg .= sprintf(__('There was a problem with the encoding of your post, and it could not be crossposted to %s. (%s : %s)', 'lj-xp'), $options['host'], $code, $error );
+					$class = 'error';
+					break;
+				case '101' : 
+					$msg .= sprintf(__('Could not crosspost. Please reenter your %s password in the <a href="%s">options screen</a> and try again. (%s : %s)', 'lj-xp'), 'options-general.php?page=lj_xp.php', 'options-general.php?page=lj-xp-options.php', $code, $error );
+					$class = 'error';
+					break;
+				case '302' : 
+					$msg .= sprintf(__('Could not crosspost the updated entry to %s. (%s : %s)', 'lj-xp'), $options['host'], $code, $error );
+					$class = 'error';
+					break;
+				default: 
+					$msg .= sprintf(__('Error from %s: %s : %s', 'lj-xp'), $options['host'], $code, $error );
+					$class = 'error';
+					break;
+			}
+		}
+	}
+	if ($class == 'updated') // still good?
+		$msg = sprintf(__("Crossposted to %s.", 'lj-xp'), $options['host']); 
+	echo '<div class="'.$class.'"><p>'.$msg.'<p></div>';
+	update_option('ljxp_error_notice', ''); // turn off the message
+}
+
+function ljxp_meta_box() {
+	add_meta_box( 'ljxp_meta', __('LiveJournal Crossposting', 'lj-xp'), 'ljxp_sidebar', 'post', 'normal', 'high' );
+}
+
 function ljxp_sidebar() {
-	global $post, $wp_version;
+	global $post;
+	$options = ljxp_get_options();
+	$userpics = $options['userpics'];
+	if (is_array($userpics)) sort($userpics);
 ?>
-	<<?=((bool)version_compare($wp_version, '2.5', '>=')? 'div class="postbox closed"' : 'fieldset class="dbx-box"' )?> id="ljxpdiv">
-		<h3<?=((bool)version_compare($wp_version, '2.5', '<=')?'><a class="togbox">+</a':' class="dbx-handle"')?>> <?php _e('LiveJournal', LJXP_DOMAIN); ?>:</h3>
-		<div <?=((bool)version_compare($wp_version, '2.5', '>=')?'class="inside"':'class="dbx-content"')?>>
-        	<?=((bool)version_compare($wp_version, '2.5', '>=')?'<p>':'')?>
+	<div class="ljxp-radio-column">
+	<h4><?php _e("Crosspost?", 'lj-xp'); ?></h4>
+	<ul>
+		<?php $ljxp_crosspost = get_post_meta($post->ID, 'no_lj', true);  ?>
+			<li><label class="selectit" for="ljxp_crosspost_go">
+				<input type="radio" <?php checked($ljxp_crosspost, 1); ?> value="1" name="ljxp_crosspost" id="ljxp_crosspost_go"/>
+				<?php _e('Crosspost', 'lj-xp'); if ($options['crosspost'] == 1) _e(' <em>(default)</em>', 'lj-xp'); ?>
+			</label></li>
 
-			<label class="selectit" for="ljxp_crosspost_go">
-				<input type="radio" <?php checked(get_post_meta($post->ID, 'no_lj', true), 0); ?> value="1" name="ljxp_crosspost" id="ljxp_crosspost_go"/>
-				<?php _e('Crosspost', LJXP_DOMAIN); ?>
-			</label>
+			<li><label class="selectit" for="ljxp_crosspost_nogo">
+				<input type="radio" <?php checked($ljxp_crosspost, 0); ?> value="0" name="ljxp_crosspost" id="ljxp_crosspost_nogo"/>
+				<?php _e('Do not crosspost', 'lj-xp'); if ($options['crosspost'] == 0) _e(' <em>(default)</em>', 'lj-xp'); ?>
+			</label></li>
 
-			<label class="selectit" for="ljxp_crosspost_nogo">
-				<input type="radio" <?php checked(get_post_meta($post->ID, 'no_lj', true), 1); ?> value="0" name="ljxp_crosspost" id="ljxp_crosspost_nogo"/>
-				<?php _e('Do not crosspost', LJXP_DOMAIN); ?>
-			</label>
+	</ul>
+	</div>
+	<div class="ljxp-radio-column">
+	<h4><?php _e("Comments", 'lj-xp'); ?></h4>
+	<ul>
+		<?php 
+		$ljxp_comments = get_post_meta($post->ID, 'ljxp_comments', true); ?>
+			<li><label class="selectit" for="ljxp_comments_on">
+				<input type="radio" <?php checked($ljxp_comments, 1); ?> value="1" name="ljxp_comments" id="ljxp_comments_on"/>
+				<?php _e('Comments on', 'lj-xp'); if ($options['comments'] == 1) _e(' <em>(default)</em>', 'lj-xp'); ?>
+			</label></li>
+			<li><label class="selectit" for="ljxp_comments_off">
+				<input type="radio" <?php checked($ljxp_comments, 2); ?> value="2" name="ljxp_comments" id="ljxp_comments_off"/>
+				<?php _e('Comments off', 'lj-xp'); if ($options['comments'] == 2) _e(' <em>(default)</em>', 'lj-xp'); ?>
+			</label></li>
 
-			<br/>
-
-			<label class="selectit" for="ljxp_comments_default">
-				<input type="radio" <?php checked(get_post_meta($post->ID, 'ljxp_comments', true), 0); ?> value="0" name="ljxp_comments" id="ljxp_comments_default"/>
-				<?php _e('Default comments setting', LJXP_DOMAIN); ?>
-			</label>
-			<label class="selectit" for="ljxp_comments_on">
-				<input type="radio" <?php checked(get_post_meta($post->ID, 'ljxp_comments', true), 1); ?> value="1" name="ljxp_comments" id="ljxp_comments_on"/>
-				<?php _e('Comments on', LJXP_DOMAIN); ?>
-			</label>
-			<label class="selectit" for="ljxp_comments_off">
-				<input type="radio" <?php checked(get_post_meta($post->ID, 'ljxp_comments', true), 2); ?> value="2" name="ljxp_comments" id="ljxp_comments_off"/>
-				<?php _e('Comments off', LJXP_DOMAIN); ?>
-			</label>
-
-			<br/>
-
-			<label class="selectit" for="ljxp_privacy_default">
-				<input type="radio" <?php checked(get_post_meta($post->ID, 'ljxp_privacy', true), 0); ?> value="0" name="ljxp_privacy" id="ljxp_privacy_default"/>
-				<?php _e('Default post privacy setting', LJXP_DOMAIN); ?>
-			</label>
-			<label class="selectit" for="ljxp_privacy_public">
-				<input type="radio" <?php checked(get_post_meta($post->ID, 'ljxp_privacy', true), 'public'); ?> value="public" name="ljxp_privacy" id="ljxp_privacy_public"/>
-				<?php _e('Public post', LJXP_DOMAIN); ?>
-			</label>
-			<label class="selectit" for="ljxp_privacy_private">
-				<input type="radio" <?php checked(get_post_meta($post->ID, 'ljxp_privacy', true), 'private'); ?> value="private" name="ljxp_privacy" id="ljxp_privacy_private"/>
-				<?php _e('Private post', LJXP_DOMAIN); ?>
-			</label>
-			<label class="selectit" for="ljxp_privacy_friends">
-				<input type="radio" <?php checked(get_post_meta($post->ID, 'ljxp_privacy', true), 'friends'); ?> value="friends" name="ljxp_privacy" id="ljxp_privacy_friends"/>
-				<?php _e('Friends only', LJXP_DOMAIN); ?>
-			</label>
-        	<?=((bool)version_compare($wp_version, '2.5', '>=')?'</p>':'')?>
+		</ul>
 		</div>
-	</<?=((bool)version_compare($wp_version, '2.5', '>=')? 'div' : 'fieldset' )?>>
-
-<?php
+		<div class="ljxp-radio-column">
+		<h4><?php _e("Privacy", 'lj-xp'); ?></h4>
+		<ul>
+			<?php 
+			$ljxp_privacy = get_post_meta($post->ID, 'ljxp_privacy', true); ?>
+			<li><label class="selectit" for="ljxp_privacy_public">
+				<input type="radio" <?php checked($ljxp_privacy, 'public'); ?> value="public" name="ljxp_privacy" id="ljxp_privacy_public"/>
+				<?php _e('Public post', 'lj-xp'); if ($options['privacy'] == 'public') _e(' <em>(default)</em>', 'lj-xp'); ?>
+			</label></li>
+			<li><label class="selectit" for="ljxp_privacy_private">
+				<input type="radio" <?php checked($ljxp_privacy, 'private'); ?> value="private" name="ljxp_privacy" id="ljxp_privacy_private"/>
+				<?php _e('Private post', 'lj-xp'); if ($options['privacy'] == 'private') _e(' <em>(default)</em>', 'lj-xp'); ?>
+			</label></li>
+			<li><label class="selectit" for="ljxp_privacy_friends">
+				<input type="radio" <?php checked($ljxp_privacy, 'friends'); ?> value="friends" name="ljxp_privacy" id="ljxp_privacy_friends"/>
+				<?php _e('Friends only', 'lj-xp'); if ($options['privacy'] == 'friends') _e(' <em>(default)</em>', 'lj-xp'); ?>
+			</label></li>
+			
+			</ul>
+		</div>
+		
+			<?php if (!empty($userpics)) : ?>
+		<p class="ljxp-userpics">
+					<label for="ljxp_userpic"><?php _e('Choose userpic: ', 'lj-xp'); ?></label>
+					<select name="ljxp_userpic">
+						<option value="-1"><?php _e('Use default', 'lj-xp'); ?></option>
+					<?php
+						$selected_userpic = get_post_meta($post->ID, 'ljxp_userpic', true);
+						foreach ($userpics as $userpic) { ?>
+							<option <?php selected($selected_userpic, $userpic); ?> value="<?php esc_attr_e($userpic); ?>"><?php esc_html_e($userpic); ?></option>
+						<?php } ?>
+					</select>
+			</p>
+			<?php endif; // $userpics
+			?>
+		<p class="ljxp-cut-text">
+		<?php 
+		$cuttext = get_post_meta($post->ID, 'ljxp_cut_text', true);
+		 ?>
+			<label for="ljxp_cut_text">
+				<?php _e('Link text for LJ cut tag (if &lt;!--more--&gt; tag is used)', 'lj-xp'); ?>
+				<input type="text" value="<?php esc_attr_e($cuttext); ?>" name="ljxp_cut_text" id="ljxp_cut_text" />
+				<p><span class="description"><?php printf(__('Default: %s', 'lj-xp'), $options['cut_text']); ?></span></p>
+			</label>
+		</p>
+		<?php
 }
 
 function ljxp_save($post_id) {
@@ -871,20 +555,34 @@ function ljxp_save($post_id) {
 	if(isset($_POST['ljxp_crosspost'])) {
 		delete_post_meta($post_id, 'no_lj');
 		if(0 == $_POST['ljxp_crosspost']) {
-			add_post_meta($post_id, 'no_lj', '1');
+			add_post_meta($post_id, 'no_lj', '1', true);
 		}
 	}
 	if(isset($_POST['ljxp_comments'])) {
 		delete_post_meta($post_id, 'ljxp_comments');
 		if($_POST['ljxp_comments'] !== 0) {
-			add_post_meta($post_id, 'ljxp_comments', $_POST['ljxp_comments']);
+			add_post_meta($post_id, 'ljxp_comments', $_POST['ljxp_comments'], true);
 		}
 	}
 
 	if(isset($_POST['ljxp_privacy'])) {
 			delete_post_meta($post_id, 'ljxp_privacy');
 		if($_POST['ljxp_privacy'] !== 0) {
-			add_post_meta($post_id, 'ljxp_privacy', $_POST['ljxp_privacy']);
+			add_post_meta($post_id, 'ljxp_privacy', $_POST['ljxp_privacy'], true);
+		}
+	}
+
+	if(isset($_POST['ljxp_userpic'])) {
+		delete_post_meta($post_id, 'ljxp_userpic');
+		if($_POST['ljxp_userpic'] !== 0 && $_POST['ljxp_userpic'] !== "Use default") {
+			add_post_meta($post_id, 'ljxp_userpic', $_POST['ljxp_userpic'], true);
+		}
+	}
+	
+	if(isset($_POST['ljxp_cut_text'])) {
+		delete_post_meta($post_id, 'ljxp_cut_text');
+		if(!empty($_POST['ljxp_cut_text'])) {
+			add_post_meta($post_id, 'ljxp_cut_text', esc_html($_POST['ljxp_cut_text']), true);
 		}
 	}
 }
@@ -893,25 +591,72 @@ function ljxp_delete_all($repost_ids) {
 	foreach((array)$repost_ids as $id) {
 		ljxp_delete($id);
 	}
+	return _e('Deleted all entries from the other journal.', 'lj-xp');
 }
 
 function ljxp_post_all($repost_ids) {
+	if (empty($repost_ids)) {
+		global $wpdb;
+		$repost_ids = $wpdb->get_col("SELECT ID FROM $wpdb->posts WHERE post_status='publish' AND post_type='post'");
+	}
+	@set_time_limit(0);
 	foreach((array)$repost_ids as $id) {
 		ljxp_post($id);
 	}
+	return _e('Posted all entries to the other journal.', 'lj-xp');
 }
 
+function ljxp_css() { ?>
+	<style type="text/css">
+	div.ljxp-radio-column ul li { list-style: none; padding: 0; text-indent: 0; margin-left: 0; }
+	div#post-body-content div.ljxp-radio-column, div#post-body-content p.ljxp-userpics { float: left; width: 22%; margin-right: 2%; }
+	div#side-info-column div.ljxp-radio-column ul { margin: 1em; }
+	p.ljxp-userpics label { font-weight: bold; }
+	p.ljxp-userpics select { display: block; margin: 1em 0; }
+	p.ljxp-cut-text { clear: both; }
+	input#ljxp_cut_text { width: 90%; }
+	</style>
+<?php 
+}
 
+function ljxp_settings_css() { ?>
+	<style type="text/css">
+	table.editform th { text-align: left; }
+	ul#category-children { list-style: none; height: 15em; width: 20em; overflow-y: scroll; border: 1px solid #dfdfdf; padding: 0 1em; background: #fff; border-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; }
+ 	ul.children { margin-left: 1.5em; }
+	tr#scary-buttons { display: none; }
+	#delete_all { font-weight: bold; color: #c00; }
+	</style>
+<?php
+}
 
 add_action('admin_menu', 'ljxp_add_pages');
-if(get_option('ljxp_username') != "") {
+$option = get_option('ljxp');
+if (!empty($option)) {
+	add_action('admin_init', 'ljxp_meta_box', 1);
+	add_action('add_meta_boxes', 'ljxp_meta_box');
+	add_action('admin_head-post-new.php', 'ljxp_css');
+	add_action('admin_head-post.php', 'ljxp_css');
 	add_action('publish_post', 'ljxp_post');
 	add_action('publish_future_post', 'ljxp_post');
 	add_action('edit_post', 'ljxp_edit');
 	add_action('delete_post', 'ljxp_delete');
-	add_action('dbx_post_sidebar', 'ljxp_sidebar');
 	add_action('publish_post', 'ljxp_save', 1);
 	add_action('save_post', 'ljxp_save', 1);
 	add_action('edit_post', 'ljxp_save', 1);
+	add_action('admin_head-post.php', 'ljxp_error_notice');
+	add_action('admin_head-post-new.php', 'ljxp_error_notice');
 }
+
+// Borrow wp-lj-comments by A-Bishop:
+if(!function_exists('lj_comments')){
+	function lj_comments($post_id){
+		$link = plugins_url( "wp-lj-comments.php?post_id=".$post_id , __FILE__ );
+		return '<img src="'.$link.'" border="0">';
+	}
+}
+
+// i18n
+$plugin_dir = basename(dirname(__FILE__)). '/lang';
+load_plugin_textdomain( 'lj-xp', 'wp-content/plugins/' . $plugin_dir, $plugin_dir );
 ?>

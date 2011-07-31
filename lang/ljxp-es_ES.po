@@ -1,0 +1,242 @@
+# Spanish (Spain) translation for LJXP
+# Copyright (C) 2006 by the LJXP Translation Team
+# This file is distributed under the same license as the LJXP package.
+# Translated by Rosmén Álvarez Rodríguez <madcore@gmail.com>
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: LiveJournal Crossposter 1.6\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2006-03-20 18:56-0600\n"
+"Last-Translator: LJXP Translation Team <plugins@ebroder.net>\n"
+"Language-Team: Rosmén Álvarez Rodríguez <madcore@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Country: SPAIN\n"
+"X-Poedit-Language: Spanish\n"
+
+#: lj_crosspost.php:227
+msgid "Options saved."
+msgstr "Opciones guardadas."
+
+#: lj_crosspost.php:237
+msgid "LiveJournal Crossposter Options"
+msgstr "Opciones de LiveJournal Crossposter"
+
+#: lj_crosspost.php:240
+msgid "LiveJournal-compliant host:"
+msgstr "Host de site basado en LiveJournal:"
+
+#: lj_crosspost.php:244
+msgid "If you are using a LiveJournal-compliant site other than LiveJournal (like DeadJournal), enter the domain name here. LiveJournal users can use the default value"
+msgstr "Si estas usando otro site basado en Livejournal (por ejemplo, DeadJournal), introduce aquí el dominio. Los usuarios de Livejournal pueden usar el valor por defecto"
+
+#: lj_crosspost.php:250
+msgid "LJ Username"
+msgstr "Nombre de usuario de LJ"
+
+#: lj_crosspost.php:254
+msgid "LJ Password"
+msgstr "Clave de LJ"
+
+#: lj_crosspost.php:258
+msgid "Only enter a value if you wish to change the stored password. Leaving this field blank will not erase any passwords already stored."
+msgstr "Introduce aqui una clave nueva solo si quieres cambiar la que has introducido anteriormente. El dejar este campo en blanco no cambiara la clave registrada."
+
+#: lj_crosspost.php:264
+msgid "Community"
+msgstr ""
+
+#: lj_crosspost.php:268
+msgid "If you wish your posts to be copied to a community, enter the community name here. Leaving this space blank will copy the posts to the specified user's journal instead"
+msgstr ""
+
+#: lj_crosspost.php:275
+msgid "Blog Header"
+msgstr "Cabezera del blog"
+
+#: lj_crosspost.php:278
+msgid "Set blog name for crosspost header"
+msgstr "Introduce el nombre del plog para la cabezera del crossposter"
+
+#: lj_crosspost.php:283
+#, php-format
+msgid "Use the title of your blog (%s)"
+msgstr "Usar el titulo de tu blog (%s)"
+
+#: lj_crosspost.php:288
+msgid "Use a custom title"
+msgstr "Usar un titulo personalizado"
+
+#: lj_crosspost.php:291
+msgid "Custom blog title"
+msgstr "Personalizar titulo del blog"
+
+#: lj_crosspost.php:295
+msgid "If you chose to use a custom title above, enter the title here. This will be used in the header which links back to this site at the top of each post on the LiveJournal."
+msgstr "Si has elegido usar un titulo personalizado, introduce aqui el titulo. Sera usado en la cabecera que enlaza a este blog en la parte superior de cada post en tu Livejournal."
+
+#: lj_crosspost.php:303
+msgid "Post Privacy"
+msgstr "Privacidad del post"
+
+#: lj_crosspost.php:306
+msgid "Privacy level for all posts to LiveJournal"
+msgstr "Nivel de privacidad para todos los posts de tu Livejournal"
+
+#: lj_crosspost.php:311
+msgid "Public"
+msgstr "Publico"
+
+#: lj_crosspost.php:316
+msgid "Private"
+msgstr "Privado"
+
+#: lj_crosspost.php:321
+#: lj_crosspost.php:799
+msgid "Friends only"
+msgstr "Solo para amigos"
+
+#: lj_crosspost.php:326
+msgid "LiveJournal Comments"
+msgstr "Comentarios en Livejournal"
+
+#: lj_crosspost.php:329
+msgid "Should comments be allowed on LiveJournal?"
+msgstr "¿Permitir comentarios en tu Livejournal?"
+
+#: lj_crosspost.php:334
+msgid "Require users to comment on WordPress"
+msgstr "Los usuarios solo podran comentar en Wordpress"
+
+#: lj_crosspost.php:339
+msgid "Allow comments on LiveJournal"
+msgstr "Permitir comentarios en Livejournal"
+
+#: lj_crosspost.php:344
+msgid "LiveJournal Tags"
+msgstr "Tags de Livejournal"
+
+#: lj_crosspost.php:347
+msgid "Tag entries on LiveJournal?"
+msgstr "¿Marcar con tags las entradas en Livejournal?"
+
+#: lj_crosspost.php:352
+msgid "Tag LiveJournal entries with WordPress categories"
+msgstr "Marcar los tags en Livejournal con las categorias de Wordpress"
+
+#: lj_crosspost.php:357
+msgid "Do not tag LiveJournal entries"
+msgstr "No marcar las entradas de Livejournal."
+
+#: lj_crosspost.php:360
+msgid "You may with to disable this feature if you are posting in an alphabet other than the Roman alphabet. LiveJournal does not seem to support non-Roman alphabets in tag names."
+msgstr "Quizás quieras desactivar esta funcion si estas posteando en un orden alfabetico diferente al romano. Livejournal no soporta alfabeto no romano en los nombres de los tags."
+
+#: lj_crosspost.php:368
+msgid "Handling of &lt;!--More--&gt;"
+msgstr "Uso de &lt;--More--&gt;"
+
+#: lj_crosspost.php:371
+msgid "How should LJXP handle More tags?"
+msgstr "¿Como debe manejar LJXP el tag More ?"
+
+#: lj_crosspost.php:376
+msgid "Link back to WordPress"
+msgstr "Enlazar a Wordpress"
+
+#: lj_crosspost.php:381
+msgid "Use an lj-cut"
+msgstr "Usar un lj-cut"
+
+#: lj_crosspost.php:386
+msgid "Copy the entire entry to LiveJournal"
+msgstr "Copiar la entrada entera a LiveJournal"
+
+#: lj_crosspost.php:391
+msgid "Category Selection"
+msgstr ""
+
+#: lj_crosspost.php:394
+msgid "Select which categories should be crossposted"
+msgstr ""
+
+#: lj_crosspost.php:403
+msgid "Any post that has <em>at least one</em> of the above categories selected will be crossposted."
+msgstr ""
+
+#: lj_crosspost.php:411
+msgid "Update Options and Crosspost All WordPress entries"
+msgstr ""
+
+#: lj_crosspost.php:412
+msgid "Update Options"
+msgstr "Guardar opciones"
+
+#: lj_crosspost.php:494
+msgid "Originally published at"
+msgstr "Publicado originalmente en"
+
+#: lj_crosspost.php:510
+msgid "This post is password protected. You can read it at"
+msgstr "Este post esta protegido con clave. Puedes leerlo en"
+
+#: lj_crosspost.php:522
+msgid "where it was originally posted"
+msgstr "donde ha sido posteado originalment"
+
+#: lj_crosspost.php:529
+#, php-format
+msgid " You can comment here or <a href=\"%s#comments\">there</a>."
+msgstr " Puedes hacer tus comentarios aqui o <a href=\"%s#comments\">aqui</a>."
+
+#: lj_crosspost.php:532
+#, php-format
+msgid " Please leave any <a href=\"%s#comments\">comments</a> there."
+msgstr " Por favor deja tus comentarios <a href=\"%s#comments\">comments</a>aqui."
+
+#: lj_crosspost.php:558
+msgid "Read the rest of this entry &raquo;"
+msgstr "Leer el resto de esta entrada &raquo;"
+
+#: lj_crosspost.php:563
+msgid "Read the rest of this entry &amp;raquo;"
+msgstr "Leer el resto de esta entrada &amp;raquo;"
+
+#: lj_crosspost.php:757
+msgid "LiveJournal"
+msgstr "LiveJournal"
+
+#: lj_crosspost.php:761
+msgid "Crosspost"
+msgstr ""
+
+#: lj_crosspost.php:765
+msgid "Do not crosspost"
+msgstr ""
+
+#: lj_crosspost.php:772
+msgid "Default comments setting"
+msgstr ""
+
+#: lj_crosspost.php:776
+msgid "Comments on"
+msgstr ""
+
+#: lj_crosspost.php:780
+msgid "Comments off"
+msgstr ""
+
+#: lj_crosspost.php:787
+msgid "Default post privacy setting"
+msgstr ""
+
+#: lj_crosspost.php:791
+msgid "Public post"
+msgstr ""
+
+#: lj_crosspost.php:795
+msgid "Private post"
+msgstr ""
+
