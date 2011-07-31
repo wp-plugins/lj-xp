@@ -57,4 +57,4 @@ to your WP blog instead!
 = 2.1 =
 * This version sends error back to the post edit screen when LJ is down rather than stopping WordPress entirely. Added support for userpics, cut text, [gallery] tags with the right images, and a proper box for the options on the Edit screen.
 = 2.1.1 = 
-* New options: turn off crossposting by default; crosspost excerpt instead of full text; [author] tag for header/footer. Fix for `<!--more-->` tags containing text. More improvements to the error handling.
+* 2.1 sends error back to the post edit screen when LJ is down rather than stopping WordPress entirely. Added support for userpics, cut text, [gallery] tags with the right images, and a proper box for the options on the Edit screen. New options in 2.1.1: turn off crossposting by default; crosspost excerpt instead of full text; [author] tag for header/footer. Fix for `<!--more-->` tags containing text. More improvements to the error handling.
