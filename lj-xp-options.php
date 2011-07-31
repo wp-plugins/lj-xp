@@ -86,9 +86,9 @@ function ljxp_validate_options($input) {
 			$msg[] .= ljxp_delete_all($repost_ids);
 		}
 
-		$input['skip_cats'] = array_diff(get_all_category_ids(), $input['post_category']);
+		$input['skip_cats'] = array_diff(get_all_category_ids(), (array)$input['category']);
 
-		unset($input['post_category']);
+		unset($input['category']);
 
 		// trim and stripslash
 		if (!empty($input['host']))			$input['host'] = 			trim($input['host']);
@@ -428,7 +428,8 @@ function ljxp_display_options() {
 							<?php
 							if (!is_array($options['skip_cats'])) $options['skip_cats'] = (array)$options['skip_cats'];
 							$selected = array_diff(get_all_category_ids(), $options['skip_cats']);
-							wp_category_checklist(0, 0, $selected, false, 0, false);
+							//wp_category_checklist(0, 0, $selected, false, 0, false);
+							wp_category_checklist(0, 0, $selected, false, $walker = new LJXP_Walker_Category_Checklist, false);
 							?>
 						</ul>
 					<span class="description">
@@ -566,5 +567,39 @@ if (!function_exists('esc_textarea')) {
 	     $safe_text = htmlspecialchars( $text, ENT_QUOTES );
 	     return apply_filters( 'esc_textarea', $safe_text, $text );
 	}
+}
+
+
+// custom walker so we can change the name attribute of the category checkboxes (until #16437 is fixed)
+// mostly a duplicate of Walker_Category_Checklist
+class LJXP_Walker_Category_Checklist extends Walker {
+     var $tree_type = 'category';
+     var $db_fields = array ('parent' => 'parent', 'id' => 'term_id'); 
+
+ 	function start_lvl(&$output, $depth, $args) {
+         $indent = str_repeat("\t", $depth);
+         $output .= "$indent<ul class='children'>\n";
+     }
+ 
+ 	function end_lvl(&$output, $depth, $args) {
+         $indent = str_repeat("\t", $depth);
+         $output .= "$indent</ul>\n";
+     }
+ 
+ 	function start_el(&$output, $category, $depth, $args) {
+         extract($args);
+         if ( empty($taxonomy) )
+             $taxonomy = 'category';
+ 
+		// This is the part we changed
+         $name = 'ljxp['.$taxonomy.']';
+ 
+         $class = in_array( $category->term_id, $popular_cats ) ? ' class="popular-category"' : '';
+         $output .= "\n<li id='{$taxonomy}-{$category->term_id}'$class>" . '<label class="selectit"><input value="' . $category->term_id . '" type="checkbox" name="'.$name.'[]" id="in-'.$taxonomy.'-' . $category->term_id . '"' . checked( in_array( $category->term_id, $selected_cats ), true, false ) . disabled( empty( $args['disabled'] ), false, false ) . ' /> ' . esc_html( apply_filters('the_category', $category->name )) . '</label>';
+     }
+ 
+ 	function end_el(&$output, $category, $depth, $args) {
+         $output .= "</li>\n";
+     }
 }
 ?>

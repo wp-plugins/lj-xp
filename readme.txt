@@ -4,7 +4,7 @@ Donate link: http://code.google.com/p/ljxp/
 Tags: livejournal, lj, crosspost
 Requires at least: 2.8
 Tested up to: 3.2.1
-Stable tag: 2.1.1
+Stable tag: 2.1.2
 
 Automatically crossposts your WP entries to your LiveJournal or LJ based clone.
 
@@ -58,3 +58,5 @@ to your WP blog instead!
 * This version sends an error back to the post edit screen when LJ is down rather than stopping WordPress entirely. Added support for userpics, cut text, [gallery] tags with the right images, and a proper box for the options on the Edit screen.
 = 2.1.1 = 
 * 2.1 sends an error back to the screen when LJ is down rather than stopping WordPress entirely. Supports userpics, cut text; fixed [gallery] images and meta boxes. New in 2.1.1: turn off crossposting by default; crosspost excerpt or full text; [author] tag; `<!--more-->` tags with text.
+= 2.1.2 =
+* 2.1 shows an error when LJ is down rather than stopping WordPress. Supports userpics, cut text; fixed [gallery] images and meta boxes. New in 2.1.1: turn off crossposting by default; crosspost excerpt or full text; [author] tag; `<!--more-->` tags with text. 2.1.2: fix line 89 error.
