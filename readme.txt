@@ -1,5 +1,5 @@
 === Plugin Name ===
-Contributors: CorneliousJD, freeatnet, EBroder, sillybean
+Contributors: sillybean, CorneliousJD, freeatnet, Evan Broder
 Donate link: http://code.google.com/p/ljxp/
 Tags: livejournal, lj, crosspost
 Requires at least: 2.8
@@ -12,7 +12,7 @@ Automatically crossposts your WP entries to your LiveJournal or LJ based clone.
 
 LJ-XP can automatically crosspost 
 a blog entry to your LiveJournal (or LiveJournal-based clone) account.
-It can crosspost to communities, and even has a customizeable
+It can crosspost to communities, and even has a customizable
 header and footer, and allows you to direct would-be LJ comments
 to your WP blog instead!
 
