@@ -34,6 +34,9 @@ to your WP blog instead!
 1. Go to Settings &rarr; LiveJournal and configure your settings.
 
 == Changelog ==
+= 2.1.2 = 
+* Fixed category handling and a warning about arrays on line 89 that could also lead to "headers already sent" message on some servers.
+* Translations: generated new POT from wordpress.org; updated old .po/.mo files to match the new text domain.
 = 2.1.1 =
 * Fix for `<!--more-->` tags containing text (<a href="http://code.google.com/p/ljxp/issues/detail?id=76">#76</a>)
 * Added a filter, `ljxp_pre_process_post`, applied to the post content before it's crossposted (<a href="http://code.google.com/p/ljxp/issues/detail?id=120">#120</a>)
