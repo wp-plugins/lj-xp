@@ -33,6 +33,12 @@ to your WP blog instead!
 1. Activate the plugin through the 'Plugins' menu in WordPress
 1. Go to Settings &rarr; LiveJournal and configure your settings.
 
+= Screenshots = 
+
+1. Sitewide crossposting options
+2. Sitewide crossposting options, continued
+3. Per-post options
+
 == Changelog ==
 = 2.1.2 = 
 * Fixed category handling and a warning about arrays on line 89 that could also lead to "headers already sent" message on some servers.
