@@ -1,6 +1,6 @@
 === Plugin Name ===
 Contributors: sillybean, CorneliousJD, freeatnet, Evan Broder
-Donate link: http://code.google.com/p/ljxp/
+Donate link: http://sillybean.net/code/wordpress/lj-xp/
 Tags: livejournal, lj, crosspost
 Requires at least: 2.8
 Tested up to: 3.2.1
