@@ -42,7 +42,7 @@ to your WP blog instead!
 * Now auto-generates excerpts from the content, if crossposting excerpts and the post doesn't have an excerpt specified (<a href="http://code.google.com/p/ljxp/issues/detail?id=139">#139</a>)
 * Added a filter, `ljxp_pre_process_excerpt`, applied to the excerpt before it's crossposted. Developers should use this in addition to `ljxp_pre_process_post` to support both excerpt and full-text options.
 * Relative links are now converted to full URLs before the content is crossposted (<a href="http://code.google.com/p/ljxp/issues/detail?id=134">#134</a>)
-* The LJ URL of the post is now stored in a custom field, so you can easily add the link to your WP entry. (<a href="http://code.google.com/p/ljxp/issues/detail?id=51">#51</a>)
+* The LJ URL of the post is now stored in a custom field, so you can easily <a href="http://code.google.com/p/ljxp/wiki/LinkingToLJ">add the link to your WP entry</a>. (<a href="http://code.google.com/p/ljxp/issues/detail?id=51">#51</a>)
 * Galleries are now crossposted with inline styles, so their grid layout is maintained (<a href="http://code.google.com/p/ljxp/issues/detail?id=117">#117</a>)
 * When posting to a community, deleted WP entries are now deleted from the community correctly.
 * New Help screen on the options page.
