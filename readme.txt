@@ -18,14 +18,15 @@ to your WP blog instead!
 
 = Features =
 
-* Crosspost entries to a LiveJournal account.
-* Crosspost entries to a LiveJournal community.
-* Add a header/footer to force comments on your site.
+* Crosspost entries to a LiveJournal account or community.
 * Fully customizable header and/or footer.
+* Force comments to be on one site or the other, or allow them on both.
 * Edit privacy settings for the LiveJournal posts.
-* Assign tags based on WordPress categories.
+* Assign tags based on WordPress categories and/or tags.
 * Assign `<!--more-->` tag settings, like LJ-Cuts, or link-backs.
-* Ability to only crosspost certain categories.
+* Crosspost only certain categories.
+* Crosspost excerpts or full text.
+* Option to <em>not</em> crosspost by default.
 
 == Installation ==
 
@@ -33,16 +34,24 @@ to your WP blog instead!
 1. Activate the plugin through the 'Plugins' menu in WordPress
 1. Go to Settings &rarr; LiveJournal and configure your settings.
 
-= Screenshots = 
-
-1. Sitewide crossposting options
-2. Sitewide crossposting options, continued
-3. Per-post options
-
 == Changelog ==
+
+= 2.2 =
+* New option: default LJ privacy levels for private WP posts. (<a href="http://code.google.com/p/ljxp/issues/detail?id=73">#73</a>)
+* Added support for custom fields in the header/footer. <a href="http://code.google.com/p/ljxp/wiki/CustomHeaderFields">See the wiki for documentation.</a> (<a href="http://code.google.com/p/ljxp/issues/detail?id=113">#113</a>)
+* Now auto-generates excerpts from the content, if crossposting excerpts and the post doesn't have an excerpt specified (<a href="http://code.google.com/p/ljxp/issues/detail?id=139">#139</a>)
+* Added a filter, `ljxp_pre_process_excerpt`, applied to the excerpt before it's crossposted. Developers should use this in addition to `ljxp_pre_process_post` to support both excerpt and full-text options.
+* Relative links are now converted to full URLs before the content is crossposted (<a href="http://code.google.com/p/ljxp/issues/detail?id=134">#134</a>)
+* The LJ URL of the post is now stored in a custom field, so you can easily add the link to your WP entry. (<a href="http://code.google.com/p/ljxp/issues/detail?id=51">#51</a>)
+* Galleries are now crossposted with inline styles, so their grid layout is maintained (<a href="http://code.google.com/p/ljxp/issues/detail?id=117">#117</a>)
+* When posting to a community, deleted WP entries are now deleted from the community correctly.
+* New Help screen on the options page.
+* Updated POT for translators.
+
 = 2.1.2 = 
 * Fixed category handling and a warning about arrays on line 89 that could also lead to "headers already sent" message on some servers.
 * Translations: generated new POT from wordpress.org; updated old .po/.mo files to match the new text domain.
+
 = 2.1.1 =
 * Fix for `<!--more-->` tags containing text (<a href="http://code.google.com/p/ljxp/issues/detail?id=76">#76</a>)
 * Added a filter, `ljxp_pre_process_post`, applied to the post content before it's crossposted (<a href="http://code.google.com/p/ljxp/issues/detail?id=120">#120</a>)
@@ -52,6 +61,7 @@ to your WP blog instead!
 * Settings API! Much better security.
 * General settings cleanup. Now using two settings instead of thirteen, and removing settings on plugin uninstall.
 * More improvements to the error handling.
+
 = 2.1 =
 * send error back to the post edit screen when LJ is down (transport/socket errors) rather than using `wp_die()`, which stops all other plugins from working
 * support userpics (<a href="http://code.google.com/p/ljxp/issues/detail?id=74">#74</a>)
@@ -61,11 +71,17 @@ to your WP blog instead!
 * options page cleanup
 * get rid of `has_cap` deprecated argument notice
 * less obnoxious default styling for the crosspost header/footer
+* A-Bishop's <a href="http://wordpress.org/extend/plugins/livejournal-comments/">LiveJournal Comments</a> is now bundled with this plugin, eliminating the need for extra setup. This version has been edited to use a more reliable configuration, and this copy will be updated alongside LJ-XP.
 
 == Upgrade Notice ==
 = 2.1 =
 * This version sends an error back to the post edit screen when LJ is down rather than stopping WordPress entirely. Added support for userpics, cut text, [gallery] tags with the right images, and a proper box for the options on the Edit screen.
+
 = 2.1.1 = 
 * 2.1 sends an error back to the screen when LJ is down rather than stopping WordPress entirely. Supports userpics, cut text; fixed [gallery] images and meta boxes. New in 2.1.1: turn off crossposting by default; crosspost excerpt or full text; [author] tag; `<!--more-->` tags with text.
+
 = 2.1.2 =
 * 2.1 shows an error when LJ is down rather than stopping WordPress. Supports userpics, cut text; fixed [gallery] images and meta boxes. New in 2.1.1: turn off crossposting by default; crosspost excerpt or full text; [author] tag; `<!--more-->` tags with text. 2.1.2: fix line 89 error.
+
+= 2.2 =
+* New: default LJ privacy levels for private WP posts; custom header/footer fields (see wiki); link to LJ post (see wiki); excerpts auto-generated; relative WP links crossposted as complete URLs; inline gallery styling to maintain grid layout; fix for deleting community posts; help screen.

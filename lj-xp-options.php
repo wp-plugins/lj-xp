@@ -10,6 +10,7 @@ function ljxp_get_options() {
 			'crosspost'			=> 1,
 			'content'			=> 'full',
 			'privacy'			=> 'public',
+			'privacy_private'	=> 'no_lj',
 			'comments'			=> 0,
 			'tag'				=> '1',
 			'more'				=> 'link',
@@ -17,7 +18,7 @@ function ljxp_get_options() {
 			'skip_cats'			=> array(),
 			'header_loc'		=> 0,		// 0 means top, 1 means bottom
 			'custom_header'		=> '',
-			'delete_private'	=> 1,
+//			'delete_private'	=> 1,
 			'userpics'			=> array(),
 			'cut_text'			=> __('Read the rest of this entry &raquo;', 'lj-xp'),
 	);
@@ -141,7 +142,23 @@ function ljxp_add_pages() {
 	$pg = add_options_page("LiveJournal", "LiveJournal", 'manage_options', basename(__FILE__), 'ljxp_display_options');
 	add_action("admin_head-$pg", 'ljxp_settings_css');
 	// register setting
-	add_action( 'admin_init', 'register_ljxp_settings' );	
+	add_action( 'admin_init', 'register_ljxp_settings' );
+	
+	// Help screen 
+	$text = '<h3>'.__('How To', 'lj-xp')."</h3>
+    <ul>
+		<li>" . sprintf(__('<a href="%s">Add a link to the LiveJournal post</a> in your WordPress theme', 'lj-xp' ), 'http://code.google.com/p/ljxp/wiki/LinkingToLJ')."</li>        
+		<li>" . sprintf(__('<a href="%s">Add custom fields</a> ([foo]) to the crosspost header or footer', 'lj-xp' ), 'http://code.google.com/p/ljxp/wiki/CustomHeaderFields')."</li>
+		<li>" . sprintf(__('<strong>Tip:</strong> If LJ has been down for a while and you just need to crosspost your last few entries, <a href="%s">using Bulk Edit</a> is much faster than the Crosspost All button.', 'lj-xp' ), 'http://code.google.com/p/ljxp/wiki/BulkEditvsCrosspostAll')."</li>
+    </ul>";
+	$text .= '<h3>' . __( 'More Help', 'lj-xp' ) . '</h3>';
+
+	$text .= '<ul>';
+	$text .= '<li><a href="http://code.google.com/p/ljxp/">' . __( 'Plugin Home Page', 'lj-xp' ) . '</a></li>';
+	$text .= '<li><a href="http://code.google.com/p/ljxp/issues/list">' . __( 'Bug Tracker', 'lj-xp' ) . '</a> &mdash; report problems here</li>';
+	$text .= '</ul>';
+
+	add_contextual_help( $pg, $text );	
 }
 
 // Add link to options page from plugin list
@@ -164,7 +181,7 @@ function ljxp_display_options() {
 		$options = ljxp_get_options();
 		?>
 		<h2><?php _e('LiveJournal Crossposter Options', 'lj-xp'); ?></h2>
-		<!-- 	<pre><?php //print_r($options); ?></pre>   -->
+		<!--	<pre><?php //print_r($options); ?></pre>   -->
 		<table class="form-table ui-tabs-panel">
 			<tr valign="top">
 				<th scope="row"><?php _e('LiveJournal-compliant host:', 'lj-xp') ?></th>
@@ -299,6 +316,7 @@ function ljxp_display_options() {
 						<dt>[author]</dt>
 						<dd><?php _e('The display name of the post\'s author', 'lj-xp'); ?></dd>
 					</dl>
+					<span class="description"><?php printf(__('You can also <a href="%s">define your own fields</a>.', 'lj-xp'), 'http://code.google.com/p/ljxp/wiki/CustomHeaderFields'); ?></span>
 					</td>
 			</table>
 		</fieldset>
@@ -306,7 +324,7 @@ function ljxp_display_options() {
 			<legend><h3><?php _e('Post Privacy', 'lj-xp'); ?></h3></legend>
 			<table class="form-table ui-tabs-panel">
 				<tr valign="top">
-					<th scope="row"><?php _e('Privacy level for all posts to LiveJournal', 'lj-xp'); ?></th>
+					<th scope="row"><?php _e('LiveJournal privacy level for all published WordPress posts', 'lj-xp'); ?></th>
 					<td>
 						<label>
 							<input name="ljxp[privacy]" type="radio" value="public" <?php checked($options['privacy'], 'public'); ?>/>
@@ -321,6 +339,31 @@ function ljxp_display_options() {
 						<label>
 							<input name="ljxp[privacy]" type="radio" value="friends" <?php checked($options['privacy'], 'friends'); ?>/>
 							<?php _e('Friends only', 'lj-xp'); ?>
+						</label>
+						<br />
+					</td>
+				</tr>
+				<tr valign="top">
+					<th scope="row"><?php _e('LiveJournal privacy level for all private WordPress posts', 'lj-xp'); ?></th>
+					<td>
+						<label>
+							<input name="ljxp[privacy_private]" type="radio" value="public" <?php checked($options['privacy_private'], 'public'); ?>/>
+							<?php _e('Public', 'lj-xp'); ?>
+						</label>
+						<br />
+						<label>
+							<input name="ljxp[privacy_private]" type="radio" value="private" <?php checked($options['privacy_private'], 'private'); ?> />
+							<?php _e('Private', 'lj-xp'); ?>
+						</label>
+						<br />
+						<label>
+							<input name="ljxp[privacy_private]" type="radio" value="friends" <?php checked($options['privacy_private'], 'friends'); ?>/>
+							<?php _e('Friends only', 'lj-xp'); ?>
+						</label>
+						<br />
+						<label>
+							<input name="ljxp[privacy_private]" type="radio" value="no_lj" <?php checked($options['privacy_private'], 'no_lj'); ?>/>
+							<?php _e('Do not crosspost at all', 'lj-xp'); ?>
 						</label>
 						<br />
 					</td>

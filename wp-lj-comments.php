@@ -1,7 +1,5 @@
 <?php
-
-//if (empty($wp)) require_once('wp-config.php');
-require_once('wp-blog-header.php');
+require_once('../../../wp-blog-header.php');
 global $wpdb;
 $id = $_GET['post_id']; 
 $number=$wpdb->get_var("SELECT COUNT(*) FROM $wpdb->comments WHERE comment_post_ID = '$id' AND comment_approved = '1'");
@@ -22,5 +20,4 @@ ImageFill($img, 0, 0, $transparent); // Background
 ImageString($img , $font, 1, 1, "$number", $black); // Font
 ImagePng($img);
 ImageDestroy($img);
-
 ?>
