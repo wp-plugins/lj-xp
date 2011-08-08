@@ -18,7 +18,6 @@ function ljxp_get_options() {
 			'skip_cats'			=> array(),
 			'header_loc'		=> 0,		// 0 means top, 1 means bottom
 			'custom_header'		=> '',
-//			'delete_private'	=> 1,
 			'userpics'			=> array(),
 			'cut_text'			=> __('Read the rest of this entry &raquo;', 'lj-xp'),
 	);
@@ -556,19 +555,19 @@ function ljxp_update_userpics($username) {
 
 	// Download the Atom feed from the server.
 	if ($keep_going) {
-		try {
-			// Download the data into a string from LiveJournal
-			// SCL: there are better built-in WP functions for this
-			$curl = curl_init('http://' . $username . '.livejournal.com/data/userpics');
-			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($curl, CURLOPT_HEADER, 0);
-			$atom_data = curl_exec($curl);
-			curl_close($curl);
-			$keep_going = 1;
-		} catch (Exception $e) {
-			$msg[] .= __('Cannot download Atom feed of userpics.', 'lj-xp');
+		$atom_data = wp_remote_get('http://' . $username . '.livejournal.com/data/userpics');
+
+		if( is_wp_error( $atom_data ) ) {
+		    $msg[] .= __('Cannot download Atom feed of userpics.', 'lj-xp');
 			$keep_going = 0;
 		}
+		/* // DEBUG
+		else {
+		   $msg[] .= 'Response:<pre>';
+		   $msg[] .= print_r( $atom_data, true );
+		   $msg[] .= '</pre>';
+		}
+		/**/
 	}
 
 	// Parse the Atom feed and pull out the keywords
@@ -578,11 +577,14 @@ function ljxp_update_userpics($username) {
 		try {
 			// Parse the data as an XML string. The atom feed has many fields, but the category/@term
 			// contains the name that is placed in the post metadata
-			$atom_doc = new SimpleXmlElement($atom_data, LIBXML_NOCDATA);
+			// and content/@src contains the URL
+			$atom_doc = new SimpleXmlElement($atom_data['body'], LIBXML_NOCDATA);
 
 			foreach($atom_doc->entry as $entry) {
 				$attributes = $entry->category->attributes();
 				$term = $attributes['term'];
+//				$content = $entry->content->attributes();
+//				$src = $content['src'];
 				$new_userpics[] = html_entity_decode($term);
 			}
 		} catch (Exception $e) {

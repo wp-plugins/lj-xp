@@ -1,10 +1,10 @@
 === Plugin Name ===
 Contributors: sillybean, CorneliousJD, freeatnet, Evan Broder
-Donate link: http://sillybean.net/code/wordpress/lj-xp/
+Donate link: http://code.google.com/p/ljxp/
 Tags: livejournal, lj, crosspost
 Requires at least: 2.8
 Tested up to: 3.2.1
-Stable tag: 2.2
+Stable tag: 2.2.1
 
 Automatically crossposts your WP entries to your LiveJournal or LJ based clone.
 
@@ -35,6 +35,10 @@ to your WP blog instead!
 1. Go to Settings &rarr; LiveJournal and configure your settings.
 
 == Changelog ==
+
+= 2.2.1 =
+* Fixed the new relative link function so it leaves full URLs alone. (<a href="http://code.google.com/p/ljxp/issues/detail?id=141">#141</a>)
+* Now using WP's HTTP API rather than curl_*(), which means the userpic retrieval functions should work on more servers.
 
 = 2.2 =
 * New option: default LJ privacy levels for private WP posts. (<a href="http://code.google.com/p/ljxp/issues/detail?id=73">#73</a>)
@@ -85,3 +89,6 @@ to your WP blog instead!
 
 = 2.2 =
 * New: default LJ privacy levels for private WP posts; custom header/footer fields (see wiki); link to LJ post (see wiki); excerpts auto-generated; relative WP links crossposted as complete URLs; inline gallery styling to maintain grid layout; fix for deleting community posts; help screen.
+
+= 2.2.1 =
+* Fixed 2.2's relative link function so it leaves full URLs alone. The userpic retrieval functions should now work on more servers.

@@ -3,15 +3,10 @@
 Plugin Name: LiveJournal Crossposter
 Plugin URI: http://code.google.com/p/ljxp/
 Description: Automatically copies all posts to a LiveJournal or other LiveJournal-based blog. Editing or deleting a post will be replicated as well.
-Version: 2.2
+Version: 2.2.1
 Author: Arseniy Ivanov, Evan Broder, Corey DeGrandchamp, Stephanie Leary
 Author URI: http://code.google.com/p/ljxp/
 */
-
-/*
-SCL TODO:
-- use built-in WP stuff for curl (search SCL)
-/**/
 
 require_once(ABSPATH . '/wp-includes/class-IXR.php');
 require(ABSPATH . '/wp-includes/version.php');
@@ -562,18 +557,21 @@ function ljxp_fix_relative_links($content) {
 			$site = site_url();
 
 		foreach ($hrefs as $href) {
+			if (preg_match('/^http:\/\//', $href)) { 
+				$linkpath = $href; // no change			
+			}
 			// href="/images/foo"
-			if ('/' == substr($href, 0, 1)) { 
+			elseif ('/' == substr($href, 0, 1)) { 
 				$linkpath = $site . $href;
 			}
 			// href="../../images/foo" or href="images/foo"
 			else { 
 				$linkpath = $site . '/' . $href;
 			}
-			// intersect base URL and href, or just clean up junk
-			$linkpath = ljxp_remove_dot_segments($linkpath);
-		 
-			$content = str_replace($href, $linkpath, $content);
+			
+		 	if ( $linkpath != $href )
+				$linkpath = ljxp_remove_dot_segments($linkpath);
+				$content = str_replace($href, $linkpath, $content);
 		} // foreach
 	} // if empty
 	return $content;
@@ -599,6 +597,7 @@ function ljxp_remove_dot_segments( $path ) {
 	    $outPath .= '/';
 	$outPath = str_replace('http:/', 'http://', $outPath);
 	$outPath = str_replace('https:/', 'https://', $outPath);
+	$outPath = str_replace(':///', '://', $outPath);
 	return $outPath;
 }
 
@@ -860,7 +859,6 @@ if (!empty($options)) {
 // Borrow wp-lj-comments by A-Bishop:
 if(!function_exists('lj_comments')){
 	function lj_comments($post_id){
-		// disable until this works
 		if ( !is_wp_error( $post_id ) ) {
 			$link = plugins_url( "wp-lj-comments.php?post_id=".$post_id , __FILE__ );
 			return '<img src="'.$link.'" border="0">';
