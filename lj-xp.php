@@ -3,7 +3,7 @@
 Plugin Name: LiveJournal Crossposter
 Plugin URI: http://code.google.com/p/ljxp/
 Description: Automatically copies all posts to a LiveJournal or other LiveJournal-based blog. Editing or deleting a post will be replicated as well.
-Version: 2.2.1
+Version: 2.2.2
 Author: Arseniy Ivanov, Evan Broder, Corey DeGrandchamp, Stephanie Leary
 Author URI: http://code.google.com/p/ljxp/
 */
@@ -36,6 +36,8 @@ register_uninstall_hook( __FILE__, 'ljxp_remove_options' );
 // for testing only
 // register_deactivation_hook( __FILE__, 'ljxp_remove_options' );
 
+
+// ---- Make it go -----
 function ljxp_post($post_id) {
 	global $wpdb, $tags, $cats; // tags/cats are going to be filtered thru an external function
 	$options = ljxp_get_options();
@@ -47,6 +49,8 @@ function ljxp_post($post_id) {
 	if (isset($privacy) && $privacy != 0) $options['privacy'] = $options['privacy_private'] = $privacy;
 	$comments = get_post_meta($post->ID, 'ljxp_comments', true);
 	if (isset($comments) && $comments != 0) $options['comments'] = $comments;
+		if ($options['comments'] == 2) $options['comments'] = 0;
+	$options['userpic'] = get_post_meta($post->ID, 'ljxp_userpic', true);
 
 	if (!is_array($options['skip_cats'])) $options['skip_cats'] = array();
 	$options['copy_cats'] = array_diff(get_all_category_ids(), $options['skip_cats']);
@@ -153,8 +157,7 @@ function ljxp_post($post_id) {
 			$postHeader .= '.';
 		}
 
-		// Depending on whether comments or allowed or not, alter the header
-		// appropriately
+		// Depending on whether comments or allowed or not, alter the header appropriately
 		if($options['comments']) {
 			$postHeader .= sprintf(__(' You can comment here or <a href="%s">there</a>.', 'lj-xp'), get_permalink($post->ID).'#comments');
 		}
@@ -218,10 +221,8 @@ function ljxp_post($post_id) {
 		}
 		else {
 			// and if there's no <!--more--> tag, we can spit it out and go on our merry way
-			// after we fix [gallery] IDs, which must happen before 'the_content' filters
-			// fixing the IDs now happens in the gallery filter, whee!
+			// after we fix [gallery] IDs, which now happens in the ljxp_inline_gallery filter
 			$the_content = $post->post_content;
-//			$the_content = str_replace('[gallery', '[gallery id="'.$post->ID.'" ', $the_content);
 			add_filter( 'post_gallery', 'ljxp_inline_gallery', 9, 2);
 			$the_content = apply_filters('the_content', $the_content);
 			$the_content = str_replace(']]>', ']]&gt;', $the_content);
@@ -272,11 +273,11 @@ function ljxp_post($post_id) {
 	// Get a timestamp for retrieving dates later
 	$date = strtotime($post->post_date);
 
-	$args = array('username'			=> $options['username'],
+	$args = array(	'username'			=> $options['username'],
 					'auth_method'		=> 'challenge',
 					'auth_challenge'	=> $challenge,
-					'auth_response'		=> md5($challenge . $options['password']),	// By spec, auth_response is md5(challenge + md5(pass))
-					'ver'				=> '1',		// Receive UTF-8 instead of ISO-8859-1
+					'auth_response'		=> md5($challenge . $options['password']),					// By spec, auth_response is md5(challenge + md5(pass))
+					'ver'				=> '1',														// Receive UTF-8 instead of ISO-8859-1
 					'event'				=> $the_event,
 					'subject'			=> apply_filters('the_title', $post->post_title),
 					'year'				=> date('Y', $date),
@@ -284,13 +285,13 @@ function ljxp_post($post_id) {
 					'day'				=> date('j', $date),
 					'hour'				=> date('G', $date),
 					'min'				=> date('i', $date),
-					'props'				=> array('opt_nocomments'	=> !$options['comments'], // allow comments?
-												 'opt_preformatted'	=> true, // event text is preformatted
-												 'opt_backdated'	=> !($recent_id == $post->ID), // prevent updated
-																	// post from being show on top
+					'props'				=> array(
+												'opt_nocomments'	=> !$options['comments'], 		// allow comments?
+												'opt_preformatted'	=> true, 						// event text is preformatted
+												'opt_backdated'		=> !($recent_id == $post->ID),	 // prevent updated post from being show on top
 												'taglist'			=> ($options['tag'] != 0 ? $cat_string : ''),
-												'picture_keyword'		=> (!empty($options['userpic']) ? $options['userpic'] : ''),
-												),
+												'picture_keyword'	=> (!empty($options['userpic']) ? $options['userpic'] : ''),
+											),
 					'usejournal'		=> (!empty($options['community']) ? $options['community'] : $options['username']),
 					);
 
@@ -345,13 +346,13 @@ function ljxp_post($post_id) {
 		$errors[$client->getErrorCode()] = $client->getErrorMessage();
 	}
 
+	$response = $client->getResponse();
 	// If we were making a new post on LJ, we need the itemid for future reference
-	if ('LJ.XMLRPC.postevent' == $method) {
-		$response = $client->getResponse();
-		// Store it to the metadata
+	if ('LJ.XMLRPC.postevent' == $method)
 		$ljID = add_post_meta($post->ID, 'ljID', $response['itemid'], true);
+	// grab the URL either way
+	if (!empty($response['url']))
 		$ljURL = add_post_meta($post->ID, 'ljURL', $response['url'], true);
-	}
 	
 	// If there were errors, store them
 	update_option('ljxp_error_notice', $errors);
@@ -398,7 +399,6 @@ function ljxp_delete($post_id) {
 				'itemid' => $ljxp_post_id,
 				'event' => "",
 				'subject' => "Delete this entry",
-				// I probably don't need to set these, but, hell, I've got it working
 				'year' => date('Y'),
 				'mon' => date('n'),
 				'day' => date('j'),
@@ -452,6 +452,7 @@ function ljxp_edit($post_id) {
 	return $post_id;
 }
 
+// ---- Filters and Helpers -----
 function ljxp_inline_gallery($output, $attr) {
 	global $post;
 	
@@ -592,15 +593,38 @@ function ljxp_remove_dot_segments( $path ) {
 	$outPath = implode( '/', $outSegs );
 	if ( $path[0] == '/' )
 	    $outPath = '/' . $outPath;
-	if ( $outPath != '/' &&
-	    (mb_strlen($path)-1) == mb_strrpos( $path, '/', 'UTF-8' ) )
-	    $outPath .= '/';
+	if ( $outPath != '/' && (mb_strlen($path)-1) == mb_strrpos( $path, '/', 'UTF-8' ) )
+    	$outPath .= '/';
 	$outPath = str_replace('http:/', 'http://', $outPath);
 	$outPath = str_replace('https:/', 'https://', $outPath);
 	$outPath = str_replace(':///', '://', $outPath);
 	return $outPath;
 }
 
+// in case this server doesn't have php_mbstring enabled in php.ini...
+if (!function_exists('mb_strlen')) {
+	function mb_strlen($string) {
+		return strlen(utf8_decode($string));
+	}
+}
+if (!function_exists('mb_strrpos')) {
+	function mb_strrpos($haystack, $needle, $offset = 0) {
+		return strrpos(utf8_decode($haystack), $needle, $offset);
+	}
+}
+
+// Borrow wp-lj-comments by A-Bishop:
+if (!function_exists('lj_comments')) {
+	function lj_comments($post_id) {
+		if ( !is_wp_error( $post_id ) ) {
+			$link = plugins_url( "wp-lj-comments.php?post_id=".$post_id , __FILE__ );
+			return '<img src="'.$link.'" border="0">';
+		}
+	return '';
+	}
+}
+
+// ---- Error Reporting -----
 function ljxp_error_notice() {
 	$errors = get_option('ljxp_error_notice');
 	if (!empty($errors)) { 
@@ -652,6 +676,7 @@ function lj_xp_print_notices() {
 	update_option('ljxp_error_notice', ''); // turn off the message
 }
 
+// ---- Custom Fields -----
 function ljxp_meta_box() {
 	add_meta_box( 'ljxp_meta', __('LiveJournal Crossposting', 'lj-xp'), 'ljxp_sidebar', 'post', 'normal', 'high' );
 }
@@ -688,8 +713,8 @@ function ljxp_sidebar() {
 				<?php _e('Comments on', 'lj-xp'); if ($options['comments'] == 1) _e(' <em>(default)</em>', 'lj-xp'); ?>
 			</label></li>
 			<li><label class="selectit" for="ljxp_comments_off">
-				<input type="radio" <?php checked($ljxp_comments, 2); ?> value="2" name="ljxp_comments" id="ljxp_comments_off"/>
-				<?php _e('Comments off', 'lj-xp'); if ($options['comments'] == 2) _e(' <em>(default)</em>', 'lj-xp'); ?>
+				<input type="radio" <?php checked($ljxp_comments, 0); ?> value="0" name="ljxp_comments" id="ljxp_comments_off"/>
+				<?php _e('Comments off', 'lj-xp'); if ($options['comments'] == 0) _e(' <em>(default)</em>', 'lj-xp'); ?>
 			</label></li>
 
 		</ul>
@@ -751,9 +776,6 @@ function ljxp_save($post_id) {
 	// still needs to be saved
 	// Using edit_post for the case in which it's changed from crossposted to
 	// not crossposted in an edit
-
-	// At least one of those hooks is probably unnecessary, but I can't figure
-	// out which one
 	if(isset($_POST['ljxp_crosspost'])) {
 		delete_post_meta($post_id, 'no_lj');
 		if(0 == $_POST['ljxp_crosspost']) {
@@ -789,6 +811,7 @@ function ljxp_save($post_id) {
 	}
 }
 
+// ----- Bulk Processes -----
 function ljxp_delete_all($repost_ids) {
 	foreach((array)$repost_ids as $id) {
 		ljxp_delete($id);
@@ -808,6 +831,7 @@ function ljxp_post_all($repost_ids = '') {
 	return __('Posted all entries to the other journal.', 'lj-xp');
 }
 
+// ---- Style -----
 function ljxp_css() { ?>
 	<style type="text/css">
 	div.ljxp-radio-column ul li { list-style: none; padding: 0; text-indent: 0; margin-left: 0; }
@@ -824,6 +848,9 @@ function ljxp_css() { ?>
 function ljxp_settings_css() { ?>
 	<style type="text/css">
 	table.editform th { text-align: left; }
+	dl { width: 47%; margin-right: 2%; margin-top: 1em; float: left; color: #666; }
+	dt { font-weight: bold; }
+	#ljxp dd { font-style: italic; }
 	ul#category-children { list-style: none; height: 15em; width: 20em; overflow-y: scroll; border: 1px solid #dfdfdf; padding: 0 1em; background: #fff; border-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; }
  	ul.children { margin-left: 1.5em; }
 	tr#scary-buttons { display: none; }
@@ -832,6 +859,8 @@ function ljxp_settings_css() { ?>
 <?php
 }
 
+
+// ---- Hooks -----
 add_action('admin_menu', 'ljxp_add_pages');
 $options = get_option('ljxp');
 if (!empty($options)) {
@@ -849,22 +878,9 @@ if (!empty($options)) {
 	add_action('untrashed_post', 'ljxp_edit');
 	add_action('edit_post', 'ljxp_edit');
 	add_action('delete_post', 'ljxp_delete');
-//	add_action('publish_post', 'ljxp_save', 1);
 	add_action('save_post', 'ljxp_save', 1);
-//	add_action('edit_post', 'ljxp_save', 1);
 	add_action('admin_head-post.php', 'ljxp_error_notice');
 	add_action('admin_head-post-new.php', 'ljxp_error_notice');
-}
-
-// Borrow wp-lj-comments by A-Bishop:
-if(!function_exists('lj_comments')){
-	function lj_comments($post_id){
-		if ( !is_wp_error( $post_id ) ) {
-			$link = plugins_url( "wp-lj-comments.php?post_id=".$post_id , __FILE__ );
-			return '<img src="'.$link.'" border="0">';
-		}
-	return '';
-	}
 }
 
 // i18n

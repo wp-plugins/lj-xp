@@ -4,28 +4,28 @@ Donate link: http://code.google.com/p/ljxp/
 Tags: livejournal, lj, crosspost
 Requires at least: 2.8
 Tested up to: 3.2.1
-Stable tag: 2.2.1
+Stable tag: 2.2.2
 
-Automatically crossposts your WP entries to your LiveJournal or LJ based clone.
+Automatically crossposts your WP entries to your LiveJournal or LJ-based clone.
 
 == Description ==
 
-LJ-XP can automatically crosspost 
-a blog entry to your LiveJournal (or LiveJournal-based clone) account.
-It can crosspost to communities, and even has a customizable
-header and footer, and allows you to direct would-be LJ comments
-to your WP blog instead!
+LJ-XP automatically crossposts blog entries to your LiveJournal (or LiveJournal-based clone) account.
 
 = Features =
 
 * Crosspost entries to a LiveJournal account or community.
-* Fully customizable header and/or footer.
+* Customize the crosspost header or footer notice using built-in shortcodes, or <a href="http://code.google.com/p/ljxp/wiki/CustomHeaderFields">create your own</a>.
 * Force comments to be on one site or the other, or allow them on both.
-* Edit privacy settings for the LiveJournal posts.
+* Edit privacy settings for the LiveJournal posts. Choose whether to crosspost private WordPress posts to LJ as private, friends-only, or not at all.
 * Assign tags based on WordPress categories and/or tags.
-* Assign `<!--more-->` tag settings, like LJ-Cuts, or link-backs.
+* Assign `<!--more-->` tag settings (use LJ-cut or just link back to the WordPress post).
 * Crosspost only certain categories.
 * Crosspost excerpts or full text.
+* Choose LJ userpics for each post.
+* Add the link to the LJ post to your WordPress post or theme.
+* Relative links in the WordPress post are converted to full URLs in the crosspost.
+* WordPress galleries, which rely on theme CSS for layout, are crossposted with inline styles.
 * Option to <em>not</em> crosspost by default.
 
 == Installation ==
@@ -34,7 +34,15 @@ to your WP blog instead!
 1. Activate the plugin through the 'Plugins' menu in WordPress
 1. Go to Settings &rarr; LiveJournal and configure your settings.
 
+== FAQ ==
+
+See the <a href="http://code.google.com/p/ljxp/wiki/FAQ">FAQ on the Google Code wiki</a>.
+
 == Changelog ==
+
+= 2.2.2 =
+* Fixed the userpic and comment settings on individual posts. (<a href="http://code.google.com/p/ljxp/issues/detail?id=144">#144</a>)
+* Added some helpers to work around servers that do not support PHP's multibyte string functions.
 
 = 2.2.1 =
 * Fixed the new relative link function so it leaves full URLs alone. (<a href="http://code.google.com/p/ljxp/issues/detail?id=141">#141</a>)
@@ -92,3 +100,6 @@ to your WP blog instead!
 
 = 2.2.1 =
 * Fixed 2.2's relative link function so it leaves full URLs alone. The userpic retrieval functions should now work on more servers.
+
+= 2.2.2 =
+* Fixed the userpic and comment settings in the per-post options. Added some helpers to work around servers that do not support PHP's multibyte string functions.
