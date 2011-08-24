@@ -164,7 +164,7 @@ function ljxp_add_pages() {
 add_action('plugin_action_links_' . plugin_basename(__FILE__), 'lj_xp_plugin_actions');
 function lj_xp_plugin_actions($links) {
 	$new_links = array();
-	$new_links[] = '<a href="options-general.php?page=lj_crosspost.php">' . __('Settings', 'google-analyticator') . '</a>';
+	$new_links[] = '<a href="options-general.php?page=lj_crosspost.php">' . __('Settings', 'lj-xp') . '</a>';
 	return array_merge($new_links, $links);
 }
 
