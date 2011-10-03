@@ -3,7 +3,7 @@
 Plugin Name: LiveJournal Crossposter
 Plugin URI: http://code.google.com/p/ljxp/
 Description: Automatically copies all posts to a LiveJournal or other LiveJournal-based blog. Editing or deleting a post will be replicated as well.
-Version: 2.2.2
+Version: 2.2.3-beta
 Author: Arseniy Ivanov, Evan Broder, Corey DeGrandchamp, Stephanie Leary
 Author URI: http://code.google.com/p/ljxp/
 */
@@ -38,7 +38,7 @@ register_uninstall_hook( __FILE__, 'ljxp_remove_options' );
 
 
 // ---- Make it go -----
-function ljxp_post($post_id) {
+function ljxp_post($post_id, $bulk = false) {
 	global $wpdb, $tags, $cats; // tags/cats are going to be filtered thru an external function
 	$options = ljxp_get_options();
 	$errors = array();
@@ -87,8 +87,7 @@ function ljxp_post($post_id) {
 	//$client->debug = true;
 
 	// Get the challenge string
-	// Using challenge for the most security. Allows pwd hash to be stored
-	// instead of pwd
+	// Using challenge for the most security. Allows pwd hash to be stored instead of pwd
 	if (!$client->query('LJ.XMLRPC.getchallenge')) {
 		$errors[$client->getErrorCode()] = $client->getErrorMessage();
 	}
@@ -268,7 +267,7 @@ function ljxp_post($post_id) {
 	}
 
 	// Get the most recent post (to see if this is it - it it's not, backdate)
-	$recent_id = $wpdb->get_var("SELECT ID FROM $wpdb->posts WHERE post_status='publish' OR post_status='private' AND post_type='post' ORDER BY post_date DESC LIMIT 1");
+//	$recent_id = $wpdb->get_var("SELECT ID FROM $wpdb->posts WHERE post_status='publish' OR post_status='private' AND post_type='post' ORDER BY post_date DESC LIMIT 1");
 
 	// Get a timestamp for retrieving dates later
 	$date = strtotime($post->post_date);
@@ -288,7 +287,7 @@ function ljxp_post($post_id) {
 					'props'				=> array(
 												'opt_nocomments'	=> !$options['comments'], 		// allow comments?
 												'opt_preformatted'	=> true, 						// event text is preformatted
-												'opt_backdated'		=> !($recent_id == $post->ID),	 // prevent updated post from being show on top
+												'opt_backdated'		=> $bulk,	 					// if true, posts will not appear in friends lists
 												'taglist'			=> ($options['tag'] != 0 ? $cat_string : ''),
 												'picture_keyword'	=> (!empty($options['userpic']) ? $options['userpic'] : ''),
 											),
@@ -826,7 +825,7 @@ function ljxp_post_all($repost_ids = '') {
 	}
 	@set_time_limit(0);
 	foreach((array)$repost_ids as $id) {
-		ljxp_post($id);
+		ljxp_post($id, true); // true here sets the backdate option on the posts so they don't flood the friends list
 	}
 	return __('Posted all entries to the other journal.', 'lj-xp');
 }
