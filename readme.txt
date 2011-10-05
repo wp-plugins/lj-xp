@@ -40,6 +40,10 @@ See the <a href="http://code.google.com/p/ljxp/wiki/FAQ">FAQ on the Google Code 
 
 == Changelog ==
 
+= 2.2.3 = 
+* Fixed a problem where posts would disappear from friends' lists due to the backdate option, which needs to be set only when bulk crossposting. (<a href="http://code.google.com/p/ljxp/issues/detail?id=146">#146</a>).
+* Fixed the relative link function to recognize the HTTPS protocol. (<a href="http://code.google.com/p/ljxp/issues/detail?id=148">#148</a>)
+
 = 2.2.2 =
 * Fixed the userpic and comment settings on individual posts. (<a href="http://code.google.com/p/ljxp/issues/detail?id=144">#144</a>)
 * Added some helpers to work around servers that do not support PHP's multibyte string functions.
