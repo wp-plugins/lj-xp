@@ -3,7 +3,7 @@
 Plugin Name: LiveJournal Crossposter
 Plugin URI: http://code.google.com/p/ljxp/
 Description: Automatically copies all posts to a LiveJournal or other LiveJournal-based blog. Editing or deleting a post will be replicated as well.
-Version: 2.2.3-beta2
+Version: 2.3
 Author: Arseniy Ivanov, Evan Broder, Corey DeGrandchamp, Stephanie Leary
 Author URI: http://code.google.com/p/ljxp/
 */
@@ -46,9 +46,16 @@ function ljxp_post($post_id, $bulk = false) {
 	
 	// Get postmeta overrides
 	$privacy = get_post_meta($post->ID, 'ljxp_privacy', true);
-	if (isset($privacy) && $privacy != 0) $options['privacy'] = $options['privacy_private'] = $privacy;
+	if (isset($privacy) && !empty($privacy)) {
+		$options['privacy'] = $privacy;
+		$options['privacy_private'] = $privacy;
+		if ($privacy == 'groups') {
+			$options['allowmask_public'] = get_post_meta($post->ID, 'ljxp_friendsgroups', true);
+			$options['allowmask_private'] = get_post_meta($post->ID, 'ljxp_friendsgroups', true);
+		}
+	}
 	$comments = get_post_meta($post->ID, 'ljxp_comments', true);
-	if (isset($comments) && $comments != 0) $options['comments'] = $comments;
+	if (isset($comments)) $options['comments'] = $comments;
 		if ($options['comments'] == 2) $options['comments'] = 0;
 	$options['userpic'] = get_post_meta($post->ID, 'ljxp_userpic', true);
 
@@ -84,7 +91,7 @@ function ljxp_post($post_id, $bulk = false) {
 
 	// And create our connection
 	$client = new IXR_Client($options['host'], '/interface/xmlrpc');
-	//$client->debug = true;
+	$client->debug = true;
 
 	// Get the challenge string
 	// Using challenge for the most security. Allows pwd hash to be stored instead of pwd
@@ -266,9 +273,6 @@ function ljxp_post($post_id, $bulk = false) {
 		$the_event = $postHeader.$the_event;
 	}
 
-	// Get the most recent post (to see if this is it - it it's not, backdate)
-//	$recent_id = $wpdb->get_var("SELECT ID FROM $wpdb->posts WHERE post_status='publish' OR post_status='private' AND post_type='post' ORDER BY post_date DESC LIMIT 1");
-
 	// Get a timestamp for retrieving dates later
 	$date = strtotime($post->post_date);
 
@@ -295,39 +299,38 @@ function ljxp_post($post_id, $bulk = false) {
 					);
 
 	// Set the privacy level according to the settings
-	if ($post->post_status == 'public') {
-		switch($options['privacy']) {
-			case "public":
-				$args['security'] = 'public';
-				break;
-			case "private":
-				$args['security'] = 'private';
-				break;
-			case "friends":
-				$args['security'] = 'usemask';
-				$args['allowmask'] = 1;
-				break;
-			default :
-				$args['security'] = "public";
-				break;
-		}
+	if (!isset($privacy) || empty($privacy))
+		$privacy = $options['privacy'];
+	$allowmask = $options['allowmask_public'];
+	if ($post->post_status == 'private') {
+		$privacy = $options['privacy_private'];
+		$allowmask = $options['allowmask_private'];
 	}
-	elseif ($post->post_status == 'private') {
-		switch($options['privacy_private']) {
-			case "public":
-				$args['security'] = 'public';
-				break;
-			case "private":
-				$args['security'] = 'private';
-				break;
-			case "friends":
-				$args['security'] = 'usemask';
-				$args['allowmask'] = 1;
-				break;
-			default :
-				$args['security'] = "private";
-				break;
-		}
+	
+	switch ($privacy) {
+		case "public":
+			$args['security'] = 'public';
+			break;
+		case "private":
+			$args['security'] = 'private';
+			break;
+		case "friends":
+			$args['security'] = 'usemask';
+			$args['allowmask'] = 1 << 0;
+			break;
+		case "groups":
+			$args['security'] = 'usemask';
+			$bits = 0;
+			if (isset($allowmask) && is_array($allowmask)) {
+				foreach ($allowmask as $groupID) {
+					$bits += 1 << $groupID;
+				}
+			}
+			$args['allowmask'] = $bits;
+		break;
+		default :
+			$args['security'] = $privacy;
+			break;
 	}
 
 	// Assume this is a new post
@@ -557,7 +560,7 @@ function ljxp_fix_relative_links($content) {
 			$site = site_url();
 
 		foreach ($hrefs as $href) {
-			if (preg_match('/^https*:\/\//', $href)) { 
+			if (preg_match('/^http:\/\//', $href)) { 
 				$linkpath = $href; // no change			
 			}
 			// href="/images/foo"
@@ -722,7 +725,10 @@ function ljxp_sidebar() {
 		<h4><?php _e("Privacy", 'lj-xp'); ?></h4>
 		<ul>
 			<?php 
-			$ljxp_privacy = get_post_meta($post->ID, 'ljxp_privacy', true); ?>
+			$ljxp_privacy = get_post_meta($post->ID, 'ljxp_privacy', true);
+			if (!isset($ljxp_privacy)) 
+				$ljxp_privacy = $options['privacy'];
+			?>
 			<li><label class="selectit" for="ljxp_privacy_public">
 				<input type="radio" <?php checked($ljxp_privacy, 'public'); ?> value="public" name="ljxp_privacy" id="ljxp_privacy_public"/>
 				<?php _e('Public post', 'lj-xp'); if ($options['privacy'] == 'public') _e(' <em>(default)</em>', 'lj-xp'); ?>
@@ -733,9 +739,32 @@ function ljxp_sidebar() {
 			</label></li>
 			<li><label class="selectit" for="ljxp_privacy_friends">
 				<input type="radio" <?php checked($ljxp_privacy, 'friends'); ?> value="friends" name="ljxp_privacy" id="ljxp_privacy_friends"/>
-				<?php _e('Friends only', 'lj-xp'); if ($options['privacy'] == 'friends') _e(' <em>(default)</em>', 'lj-xp'); ?>
+				<?php _e('All friends', 'lj-xp'); if ($options['privacy'] == 'friends') _e(' <em>(default)</em>', 'lj-xp'); ?>
 			</label></li>
-			
+			<?php
+			if (isset($options['friendsgroups'])) {
+				 $allowmask = get_post_meta($post->ID, 'ljxp_friendsgroups', true);
+			?>
+			<li><label>
+				<input type="radio" <?php checked($ljxp_privacy, 'groups'); ?> value="groups" name="ljxp_privacy" id="ljxp_privacy_groups" />
+				<?php _e('Friends groups:', 'lj-xp');  if ($options['privacy'] == 'friends') _e(' <em>(default)</em>', 'lj-xp'); ?>
+			</label>
+				<ul id="friendsgroups">
+					<?php foreach ($options['friendsgroups'] as $groupid => $groupname) { ?>
+						<li><label>
+							<input name="ljxp_friendsgroups[<?php esc_attr_e($groupid) ?>]" type="checkbox" value="<?php esc_attr_e($groupid); ?>" <?php checked($allowmask[$groupid], $groupid); ?>/> <?php esc_html_e($groupname); ?>
+						</label></li>
+					<?php } // foreach ?>
+				</ul>
+			</li>
+			<?php } // if there are groups 
+			else { ?>
+				<label>
+					<input name="ljxp_friendsgroups" type="radio" value="groups" disabled="disabled" />
+					<?php printf(__('No friends groups found. Visit the <a href="%s">settings page</a> to update custom groups.', 'lj-xp'), 'options-general.php?page=lj-xp-options.php'); ?>
+				</label>
+				<br />
+			<?php } ?>
 			</ul>
 		</div>
 		
@@ -795,6 +824,13 @@ function ljxp_save($post_id) {
 		}
 	}
 
+	if(isset($_POST['ljxp_friendsgroups'])) {
+			delete_post_meta($post_id, 'ljxp_friendsgroups');
+		if(!empty($_POST['ljxp_friendsgroups'])) {
+			add_post_meta($post_id, 'ljxp_friendsgroups', $_POST['ljxp_friendsgroups'], true);
+		}
+	}
+	
 	if(isset($_POST['ljxp_userpic'])) {
 		delete_post_meta($post_id, 'ljxp_userpic');
 		if(!empty($_POST['ljxp_userpic'])) {
@@ -812,22 +848,24 @@ function ljxp_save($post_id) {
 
 // ----- Bulk Processes -----
 function ljxp_delete_all($repost_ids) {
+	$options = ljxp_get_options();
 	foreach((array)$repost_ids as $id) {
 		ljxp_delete($id);
 	}
-	return __('Deleted all entries from the other journal.', 'lj-xp');
+	return sprintf(__('Deleted all entries from %s.', 'lj-xp'), $options['host']);
 }
 
 function ljxp_post_all($repost_ids = '') {
+	$options = ljxp_get_options();
 	if (empty($repost_ids)) {
 		global $wpdb;
-		$repost_ids = $wpdb->get_col("SELECT ID FROM $wpdb->posts WHERE post_status='publish' OR post_status='private' AND post_type='post'");
+		$repost_ids = $wpdb->get_col("SELECT ID FROM $wpdb->posts WHERE (post_status='publish' OR post_status='private') AND post_type='post'");
 	}
 	@set_time_limit(0);
 	foreach((array)$repost_ids as $id) {
 		ljxp_post($id, true); // true here sets the backdate option on the posts so they don't flood the friends list
 	}
-	return __('Posted all entries to the other journal.', 'lj-xp');
+	return sprintf(__('Posted all entries to %s with the Date Out of Order option on to avoid flooding your friends. To get your last few entries to appear in friends\'s lists, you should edit them one by one.', 'lj-xp'), $options['host']);
 }
 
 // ---- Style -----
@@ -838,6 +876,8 @@ function ljxp_css() { ?>
 	div#side-info-column div.ljxp-radio-column ul { margin: 1em; }
 	p.ljxp-userpics label { font-weight: bold; }
 	p.ljxp-userpics select { display: block; margin: 1em 0; }
+	ul#friendsgroups { margin: 0; padding: 0; }
+	ul#friendsgroups li { list-style: none; margin: 0 0 0 2em; padding: 0; text-indent: 0; }
 	p.ljxp-cut-text { clear: both; }
 	input#ljxp_cut_text { width: 90%; }
 	</style>
@@ -847,12 +887,14 @@ function ljxp_css() { ?>
 function ljxp_settings_css() { ?>
 	<style type="text/css">
 	table.editform th { text-align: left; }
-	dl { width: 47%; margin-right: 2%; margin-top: 1em; float: left; color: #666; }
+	dl { margin-right: 2%; margin-top: 1em; color: #666; }
 	dt { font-weight: bold; }
 	#ljxp dd { font-style: italic; }
 	ul#category-children { list-style: none; height: 15em; width: 20em; overflow-y: scroll; border: 1px solid #dfdfdf; padding: 0 1em; background: #fff; border-radius: 4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; }
  	ul.children { margin-left: 1.5em; }
 	tr#scary-buttons { display: none; }
+	ul#friendsgroups { margin: 0; padding: 0; }
+	ul#friendsgroups li { list-style: none; margin: 0 0 0 2em; padding: 0; text-indent: 0; }
 	#delete_all { font-weight: bold; color: #c00; }
 	</style>
 <?php

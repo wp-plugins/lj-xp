@@ -17,7 +17,7 @@ LJ-XP automatically crossposts blog entries to your LiveJournal (or LiveJournal-
 * Crosspost entries to a LiveJournal account or community.
 * Customize the crosspost header or footer notice using built-in shortcodes, or <a href="http://code.google.com/p/ljxp/wiki/CustomHeaderFields">create your own</a>.
 * Force comments to be on one site or the other, or allow them on both.
-* Edit privacy settings for the LiveJournal posts. Choose whether to crosspost private WordPress posts to LJ as private, friends-only, or not at all.
+* Edit privacy settings for the LiveJournal posts. Choose whether to crosspost private WordPress posts to LJ as private, for friends (including custom friends groups), or not at all.
 * Assign tags based on WordPress categories and/or tags.
 * Assign `<!--more-->` tag settings (use LJ-cut or just link back to the WordPress post).
 * Crosspost only certain categories.
@@ -40,9 +40,10 @@ See the <a href="http://code.google.com/p/ljxp/wiki/FAQ">FAQ on the Google Code 
 
 == Changelog ==
 
-= 2.2.3 = 
-* Fixed a problem where posts would disappear from friends' lists due to the backdate option, which needs to be set only when bulk crossposting. (<a href="http://code.google.com/p/ljxp/issues/detail?id=146">#146</a>).
-* Fixed the relative link function to recognize the HTTPS protocol. (<a href="http://code.google.com/p/ljxp/issues/detail?id=148">#148</a>)
+= 2.3 =
+* Added support for custom friends groups. (<a href="http://code.google.com/p/ljxp/issues/detail?id=37">#37</a>)
+* Fixed a problem where entries that were edited after being crossposted had the backdate option set, making them disappear from friends lists. This option is now set only when crossposting all entries in bulk. (<a href="http://code.google.com/p/ljxp/issues/detail?id=146">#146</a>)
+* Fixed another bug in the per-post comments settings. (<a href="http://code.google.com/p/ljxp/issues/detail?id=149">#149</a>)
 
 = 2.2.2 =
 * Fixed the userpic and comment settings on individual posts. (<a href="http://code.google.com/p/ljxp/issues/detail?id=144">#144</a>)
@@ -107,3 +108,6 @@ See the <a href="http://code.google.com/p/ljxp/wiki/FAQ">FAQ on the Google Code 
 
 = 2.2.2 =
 * Fixed the userpic and comment settings in the per-post options. Added some helpers to work around servers that do not support PHP's multibyte string functions.
+
+= 2.3 =
+* Support for custom friends groups! Fixed the backdate problem on entries that were edited after being crossposted; these now appear in friends lists as usual.

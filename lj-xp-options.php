@@ -11,6 +11,7 @@ function ljxp_get_options() {
 			'content'			=> 'full',
 			'privacy'			=> 'public',
 			'privacy_private'	=> 'no_lj',
+			'allowmask'			=> array(),
 			'comments'			=> 0,
 			'tag'				=> '1',
 			'more'				=> 'link',
@@ -83,7 +84,9 @@ function ljxp_validate_options($input) {
 			foreach ($beenposted as $post) {
 				$repost_ids[] = $post->ID;
 			}
+			$msg[] .= __('Settings saved.', 'lj-xp');
 			$msg[] .= ljxp_delete_all($repost_ids);
+			$msgtype = 'updated';
 		}
 
 		$input['skip_cats'] = array_diff(get_all_category_ids(), (array)$input['category']);
@@ -98,7 +101,9 @@ function ljxp_validate_options($input) {
 		if (!empty($input['custom_header'])) $input['custom_header'] = 	trim(stripslashes($input['custom_header']));
 
 		if(isset($input['crosspost_all'])) {
+			$msg[] .= __('Settings saved.', 'lj-xp');
 			$msg[] .= ljxp_post_all();
+			$msgtype = 'updated';
 		}
 		
 	} // if updated
@@ -122,6 +127,17 @@ function ljxp_validate_options($input) {
 	}
 	else
 		$input['userpics'] = $options['userpics']; // preserve
+		
+	// If we are updating friends groups, then get a new list of groups from the server.
+	if (isset($input['update_groups'])) {
+		$groups = ljxp_update_friendsgroups($input['username']);
+		$input['friendsgroups'] = $groups['friendsgroups'];
+		$msg[] .= $groups['msg'];
+		$msgtype = $groups['msgtype'];
+		unset($input['update_groups']);
+	}
+	else
+		$input['friendsgroups'] = $options['friendsgroups']; // preserve
 		
 	// Send custom updated message
 	$msg = implode('<br />', $msg);
@@ -337,9 +353,30 @@ function ljxp_display_options() {
 						<br />
 						<label>
 							<input name="ljxp[privacy]" type="radio" value="friends" <?php checked($options['privacy'], 'friends'); ?>/>
-							<?php _e('Friends only', 'lj-xp'); ?>
+							<?php _e('All friends', 'lj-xp'); ?>
 						</label>
 						<br />
+						<?php
+						if (!empty($options['friendsgroups'])) { ?>
+						<label>
+							<input name="ljxp[privacy]" type="radio" value="groups" <?php checked($options['privacy'], 'groups'); ?> />
+							<?php _e('Friends groups:', 'lj-xp'); ?>
+						</label>
+							<ul id="friendsgroups">
+								<?php foreach ($options['friendsgroups'] as $groupid => $groupname) { ?>
+									<li><label>
+										<input name="ljxp[allowmask_public][<?php esc_attr_e($groupid) ?>]" type="checkbox" value="<?php esc_attr_e($groupid); ?>" <?php checked($options['allowmask_public'][$groupid], $groupid); ?>/> <?php esc_html_e($groupname); ?>
+									</label></li>
+								<?php } // foreach ?>
+							</ul>
+						<?php } // if there are groups 
+						else { ?>
+							<label>
+								<input name="ljxp[privacy]" type="radio" value="groups" disabled="disabled" />
+								<?php _e('No friends groups set. Use the button below to update group list.', 'lj-xp'); ?>
+							</label>
+							<br />
+						<?php } ?>
 					</td>
 				</tr>
 				<tr valign="top">
@@ -357,9 +394,30 @@ function ljxp_display_options() {
 						<br />
 						<label>
 							<input name="ljxp[privacy_private]" type="radio" value="friends" <?php checked($options['privacy_private'], 'friends'); ?>/>
-							<?php _e('Friends only', 'lj-xp'); ?>
+							<?php _e('All friends', 'lj-xp'); ?>
 						</label>
 						<br />
+						<?php
+						if (!empty($options['friendsgroups'])) { ?>
+						<label>
+							<input name="ljxp[privacy_private]" type="radio" value="groups" <?php checked($options['privacy_private'], 'groups'); ?> />
+							<?php _e('Friends groups:', 'lj-xp'); ?>
+						</label>
+							<ul id="friendsgroups">
+								<?php foreach ($options['friendsgroups'] as $groupid => $groupname) { ?>
+									<li><label>
+										<input name="ljxp[allowmask_private][<?php esc_attr_e($groupid) ?>]" type="checkbox" value="<?php esc_attr_e($groupid); ?>" <?php checked($options['allowmask_private'][$groupid], $groupid); ?>/> <?php esc_html_e($groupname); ?>
+									</label></li>
+								<?php } // foreach ?>
+							</ul>
+						<?php } // if there are groups 
+						else { ?>
+							<label>
+								<input name="ljxp[privacy_private]" type="radio" value="groups" disabled="disabled" />
+								<?php _e('No friends groups set. Use the button below to update group list.', 'lj-xp'); ?>
+							</label>
+							<br />
+						<?php } ?>
 						<label>
 							<input name="ljxp[privacy_private]" type="radio" value="no_lj" <?php checked($options['privacy_private'], 'no_lj'); ?>/>
 							<?php _e('Do not crosspost at all', 'lj-xp'); ?>
@@ -470,7 +528,6 @@ function ljxp_display_options() {
 							<?php
 							if (!is_array($options['skip_cats'])) $options['skip_cats'] = (array)$options['skip_cats'];
 							$selected = array_diff(get_all_category_ids(), $options['skip_cats']);
-							//wp_category_checklist(0, 0, $selected, false, 0, false);
 							wp_category_checklist(0, 0, $selected, false, $walker = new LJXP_Walker_Category_Checklist, false);
 							?>
 						</ul>
@@ -501,6 +558,25 @@ function ljxp_display_options() {
 					<?php if (count($options['userpics'])) { ?>
 						<input type="submit" name="ljxp[clear_userpics]" value="<?php printf(esc_attr('Clear %d Userpics', 'lj-xp'), count($options['userpics'])); ?>" class="button-secondary" />
 					<?php } ?>
+					</td>
+				</tr>
+			</table>
+		</fieldset>
+		<fieldset class="options">
+			<legend><h3><?php _e('Custom Friends Groups', 'lj-xp'); ?></h3></legend>
+			<table class="form-table ui-tabs-panel">
+				<tr valign="top">
+					<th scope="row"><?php _e('The following groups are currently available', 'lj-xp'); ?></th>
+					<td>
+					<?php
+						if (empty($options['friendsgroups']))
+							_e('<p>No friends groups have been set.</p>');
+						else
+							echo implode(', ', $options['friendsgroups']);
+					?>
+					<br/>
+					<br/>
+					<input type="submit" name="ljxp[update_groups]" value="<?php esc_attr_e('Update Friends Groups', 'lj-xp'); ?>" class="button-secondary" />
 					</td>
 				</tr>
 			</table>
@@ -538,6 +614,62 @@ function ljxp_display_options() {
 	</script>
 </div>
 <?php
+}
+
+function ljxp_update_friendsgroups($username) {
+	$msgtype = 'error';
+	
+	if (empty($username)) {
+		// Report what we did to the user
+		$msg[] .= __('Cannot get friends groups unless username is set.', 'lj-xp');
+		return $msg;
+	}
+	
+	$options = get_option('ljxp');
+	
+	// And create our connection
+	$client = new IXR_Client($options['host'], '/interface/xmlrpc');
+	//$client->debug = true;
+
+	// Get the challenge string
+	// Using challenge for the most security. Allows pwd hash to be stored instead of pwd
+	if (!$client->query('LJ.XMLRPC.getchallenge')) {
+		$errors[$client->getErrorCode()] = $client->getErrorMessage();
+	}
+
+	// And retrieve the challenge string
+	$response = $client->getResponse();
+	$challenge = $response['challenge'];
+	
+	$args = array(	'username'			=> $options['username'],
+					'auth_method'		=> 'challenge',
+					'auth_challenge'	=> $challenge,
+					'auth_response'		=> md5($challenge . $options['password']),	// By spec, auth_response is md5(challenge + md5(pass))
+					'ver'				=> '1',										// Receive UTF-8 instead of ISO-8859-1
+					);
+	
+	$method = 'LJ.XMLRPC.getfriendgroups';
+	
+	// And awaaaayyy we go!
+	if (!$client->query($method, $args)) {
+		$errors[$client->getErrorCode()] = $client->getErrorMessage();
+	}
+
+	$response = $client->getResponse();
+	$groups = array();
+	foreach ($response['friendgroups'] as $groupinfo) {
+		$groupid = $groupinfo['id'];
+		$groups[$groupid] = $groupinfo['name'];
+	}
+	$options['friendsgroups'] = $groups; // overwrite old values
+	update_option('ljxp', $options);
+	
+	// Report our success
+	$msg[] .= sprintf(__('Found %d friendsgroups.', 'lj-xp'), count($groups));
+	$msgtype = 'updated';
+	$msg = implode('<br />', $msg);
+	
+	return array('friendsgroups' => $groups, 'msg' => $msg, 'msgtype' => $msgtype);
 }
 
 function ljxp_update_userpics($username) {
