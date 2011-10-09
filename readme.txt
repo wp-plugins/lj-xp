@@ -3,7 +3,7 @@ Contributors: sillybean, CorneliousJD, freeatnet, Evan Broder
 Donate link: http://code.google.com/p/ljxp/
 Tags: livejournal, lj, crosspost
 Requires at least: 2.8
-Tested up to: 3.2.1
+Tested up to: 3.3
 Stable tag: 2.3
 
 Automatically crossposts your WP entries to your LiveJournal or LJ-based clone.
