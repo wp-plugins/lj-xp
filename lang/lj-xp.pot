@@ -1,0 +1,520 @@
+# Copyright (C) 2010 LiveJournal Crossposter
+# This file is distributed under the same license as the LiveJournal Crossposter package.
+msgid ""
+msgstr ""
+"Project-Id-Version: LiveJournal Crossposter 2.2\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/lj-xp\n"
+"POT-Creation-Date: 2011-08-06 01:47:31+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2010-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: lj-xp-options.php:23
+msgid "Read the rest of this entry &raquo;"
+msgstr ""
+
+#: lj-xp-options.php:113
+msgid "Userpic list cleared."
+msgstr ""
+
+#: lj-xp-options.php:131
+msgid "Settings saved."
+msgstr ""
+
+#: lj-xp-options.php:148
+msgid "How To"
+msgstr ""
+
+#: lj-xp-options.php:150
+msgid ""
+"<a href=\"%s\">Add a link to the LiveJournal post</a> in your WordPress theme"
+msgstr ""
+
+#: lj-xp-options.php:151
+msgid ""
+"<a href=\"%s\">Add custom fields</a> ([foo]) to the crosspost header or "
+"footer"
+msgstr ""
+
+#: lj-xp-options.php:152
+msgid ""
+"<strong>Tip:</strong> If LJ has been down for a while and you just need to "
+"crosspost your last few entries, <a href=\"%s\">using Bulk Edit</a> is much "
+"faster than the Crosspost All button."
+msgstr ""
+
+#: lj-xp-options.php:154
+msgid "More Help"
+msgstr ""
+
+#: lj-xp-options.php:157
+msgid "Plugin Home Page"
+msgstr ""
+
+#: lj-xp-options.php:158
+msgid "Bug Tracker"
+msgstr ""
+
+#: lj-xp-options.php:168
+msgid "Settings"
+msgstr ""
+
+#: lj-xp-options.php:183
+msgid "LiveJournal Crossposter Options"
+msgstr ""
+
+#: lj-xp-options.php:187
+msgid "LiveJournal-compliant host:"
+msgstr ""
+
+#: lj-xp-options.php:191
+msgid ""
+"If you are using a LiveJournal-compliant site other than LiveJournal (like "
+"DeadJournal), enter the domain name here. LiveJournal users can use the "
+"default value"
+msgstr ""
+
+#: lj-xp-options.php:197
+msgid "LJ Username"
+msgstr ""
+
+#: lj-xp-options.php:201
+msgid "LJ Password"
+msgstr ""
+
+#: lj-xp-options.php:204
+msgid ""
+"Only enter a value if you wish to change the stored password. Leaving this "
+"field blank will not erase any passwords already stored."
+msgstr ""
+
+#: lj-xp-options.php:209
+msgid "Community"
+msgstr ""
+
+#: lj-xp-options.php:212
+msgid ""
+"If you wish your posts to be copied to a community, enter the community name "
+"here. Leaving this space blank will copy the posts to the specified user's "
+"journal instead"
+msgstr ""
+
+#: lj-xp-options.php:218
+msgid "Crosspost Default"
+msgstr ""
+
+#: lj-xp-options.php:221
+msgid "If no crosspost setting is specified for an individual post:"
+msgstr ""
+
+#: lj-xp-options.php:225 lj-xp.php:672
+msgid "Crosspost"
+msgstr ""
+
+#: lj-xp-options.php:230 lj-xp.php:677
+msgid "Do not crosspost"
+msgstr ""
+
+#: lj-xp-options.php:234
+msgid "Content to crosspost:"
+msgstr ""
+
+#: lj-xp-options.php:238
+msgid "Full text"
+msgstr ""
+
+#: lj-xp-options.php:243
+msgid "Excerpt only"
+msgstr ""
+
+#: lj-xp-options.php:249
+msgid "Blog Header"
+msgstr ""
+
+#: lj-xp-options.php:252
+msgid "Crosspost header/footer location"
+msgstr ""
+
+#: lj-xp-options.php:256
+msgid "Top of post"
+msgstr ""
+
+#: lj-xp-options.php:261
+msgid "Bottom of post"
+msgstr ""
+
+#: lj-xp-options.php:265
+msgid "Set blog name for crosspost header/footer"
+msgstr ""
+
+#: lj-xp-options.php:270
+msgid "Use the title of your blog (%s)"
+msgstr ""
+
+#: lj-xp-options.php:276
+msgid "Use a custom title"
+msgstr ""
+
+#: lj-xp-options.php:281
+msgid "Custom blog title"
+msgstr ""
+
+#: lj-xp-options.php:284
+msgid ""
+"If you chose to use a custom title above, enter the title here. This will be "
+"used in the header which links back to this site at the top of each post on "
+"the LiveJournal."
+msgstr ""
+
+#: lj-xp-options.php:289
+msgid "Custom crosspost header/footer"
+msgstr ""
+
+#: lj-xp-options.php:292
+msgid ""
+"If you wish to use LJXP's dynamically generated post header/footer, you can "
+"ignore this setting. If you don't like the default crosspost header/footer, "
+"specify your own here. For flexibility, you can choose from a series of case-"
+"sensitive substitution strings, listed below:"
+msgstr ""
+
+#: lj-xp-options.php:296
+msgid "The title of your blog, as specified above"
+msgstr ""
+
+#: lj-xp-options.php:299
+msgid "The URL of your blog's homepage"
+msgstr ""
+
+#: lj-xp-options.php:302
+msgid "A permanent URL to the post being crossposted"
+msgstr ""
+
+#: lj-xp-options.php:305
+msgid ""
+"The URL for comments. Generally this is the permalink URL with #comments on "
+"the end"
+msgstr ""
+
+#: lj-xp-options.php:308
+msgid "Tags with links list for the post"
+msgstr ""
+
+#: lj-xp-options.php:311
+msgid "Categories with links list for the post"
+msgstr ""
+
+#: lj-xp-options.php:314
+msgid "An image containing a comments counter"
+msgstr ""
+
+#: lj-xp-options.php:317
+msgid "The display name of the post's author"
+msgstr ""
+
+#: lj-xp-options.php:319
+msgid "You can also <a href=\"%s\">define your own fields</a>."
+msgstr ""
+
+#: lj-xp-options.php:324
+msgid "Post Privacy"
+msgstr ""
+
+#: lj-xp-options.php:327
+msgid "LiveJournal privacy level for all published WordPress posts"
+msgstr ""
+
+#: lj-xp-options.php:331 lj-xp-options.php:351
+msgid "Public"
+msgstr ""
+
+#: lj-xp-options.php:336 lj-xp-options.php:356
+msgid "Private"
+msgstr ""
+
+#: lj-xp-options.php:341 lj-xp-options.php:361 lj-xp.php:713
+msgid "Friends only"
+msgstr ""
+
+#: lj-xp-options.php:347
+msgid "LiveJournal privacy level for all private WordPress posts"
+msgstr ""
+
+#: lj-xp-options.php:366
+msgid "Do not crosspost at all"
+msgstr ""
+
+#: lj-xp-options.php:374
+msgid "LiveJournal Comments"
+msgstr ""
+
+#: lj-xp-options.php:377
+msgid "Should comments be allowed on LiveJournal?"
+msgstr ""
+
+#: lj-xp-options.php:381
+msgid "Require users to comment on WordPress"
+msgstr ""
+
+#: lj-xp-options.php:386
+msgid "Allow comments on LiveJournal"
+msgstr ""
+
+#: lj-xp-options.php:393
+msgid "LiveJournal Tags"
+msgstr ""
+
+#: lj-xp-options.php:396
+msgid "Tag entries on LiveJournal?"
+msgstr ""
+
+#: lj-xp-options.php:410
+msgid "Tag LiveJournal entries with WordPress categories only"
+msgstr ""
+
+#: lj-xp-options.php:415
+msgid "Tag LiveJournal entries with WordPress categories and tags"
+msgstr ""
+
+#: lj-xp-options.php:420
+msgid "Tag LiveJournal entries with WordPress tags only"
+msgstr ""
+
+#: lj-xp-options.php:425
+msgid "Do not tag LiveJournal entries"
+msgstr ""
+
+#: lj-xp-options.php:430
+msgid ""
+"You may with to disable this feature if you are posting in an alphabet other "
+"than the Roman alphabet. LiveJournal does not seem to support non-Roman "
+"alphabets in tag names."
+msgstr ""
+
+#: lj-xp-options.php:438
+msgid "Handling of &lt;!--More--&gt;"
+msgstr ""
+
+#: lj-xp-options.php:441
+msgid "How should LJXP handle More tags?"
+msgstr ""
+
+#: lj-xp-options.php:445
+msgid "Link back to WordPress"
+msgstr ""
+
+#: lj-xp-options.php:450
+msgid "Use an lj-cut"
+msgstr ""
+
+#: lj-xp-options.php:455
+msgid "Copy the entire entry to LiveJournal"
+msgstr ""
+
+#: lj-xp-options.php:463
+msgid "Category Selection"
+msgstr ""
+
+#: lj-xp-options.php:466
+msgid "Select which categories should be crossposted"
+msgstr ""
+
+#: lj-xp-options.php:470
+msgid "Check all"
+msgstr ""
+
+#: lj-xp-options.php:479
+msgid ""
+"Any post that has <em>at least one</em> of the above categories selected "
+"will be crossposted."
+msgstr ""
+
+#: lj-xp-options.php:486
+msgid "Userpics"
+msgstr ""
+
+#: lj-xp-options.php:489
+msgid "The following userpics are currently available"
+msgstr ""
+
+#: lj-xp-options.php:494
+msgid ""
+"<p>No userpics have been downloaded, only the default will be available.</p>"
+msgstr ""
+
+#: lj-xp-options.php:500
+msgid "Update Userpics"
+msgstr ""
+
+#: lj-xp-options.php:510
+msgid "Crosspost or delete all entries"
+msgstr ""
+
+#: lj-xp-options.php:515
+msgid ""
+"If you have changed your username or community, you might want to crosspost "
+"all your entries, or delete all the old ones from your journal. These "
+"buttons are hidden so you don't press them by accident. <a href=\"%s\" %"
+"s>Show the buttons.</a>"
+msgstr ""
+
+#: lj-xp-options.php:521
+msgid "Update options and crosspost all WordPress entries"
+msgstr ""
+
+#: lj-xp-options.php:522
+msgid "Update options and delete all journal entries"
+msgstr ""
+
+#: lj-xp-options.php:528
+msgid "Update Options"
+msgstr ""
+
+#: lj-xp-options.php:553
+msgid "Cannot update userpic list unless username is set."
+msgstr ""
+
+#: lj-xp-options.php:569
+msgid "Cannot download Atom feed of userpics."
+msgstr ""
+
+#: lj-xp-options.php:589
+msgid "Cannot parse Atom data from LiveJournal."
+msgstr ""
+
+#: lj-xp-options.php:600
+msgid "Found %d userpics on LiveJournal."
+msgstr ""
+
+#: lj-xp.php:146
+msgid "Originally published at"
+msgstr ""
+
+#: lj-xp.php:153
+msgid "This post is password protected. You can read it at"
+msgstr ""
+
+#: lj-xp.php:157
+msgid "where it was originally posted"
+msgstr ""
+
+#: lj-xp.php:164
+msgid " You can comment here or <a href=\"%s\">there</a>."
+msgstr ""
+
+#: lj-xp.php:167
+msgid " Please leave any <a href=\"%s\">comments</a> there."
+msgstr ""
+
+#: lj-xp.php:621
+msgid "Could not connect to %s. This post has not been crossposted. (%s : %s)"
+msgstr ""
+
+#: lj-xp.php:626
+msgid ""
+"There was a problem with the encoding of your post, and it could not be "
+"crossposted to %s. (%s : %s)"
+msgstr ""
+
+#: lj-xp.php:630
+msgid ""
+"Could not crosspost. Please reenter your %s password in the <a href=\"%s"
+"\">options screen</a> and try again. (%s : %s)"
+msgstr ""
+
+#: lj-xp.php:634
+msgid "Could not crosspost the updated entry to %s. (%s : %s)"
+msgstr ""
+
+#: lj-xp.php:644
+msgid "Error from %s: %s : %s"
+msgstr ""
+
+#: lj-xp.php:651
+msgid "Crossposted to %s."
+msgstr ""
+
+#: lj-xp.php:657
+msgid "LiveJournal Crossposting"
+msgstr ""
+
+#: lj-xp.php:667
+msgid "Crosspost?"
+msgstr ""
+
+#: lj-xp.php:672 lj-xp.php:677 lj-xp.php:689 lj-xp.php:693 lj-xp.php:705
+#: lj-xp.php:709 lj-xp.php:713
+msgid " <em>(default)</em>"
+msgstr ""
+
+#: lj-xp.php:683
+msgid "Comments"
+msgstr ""
+
+#: lj-xp.php:689
+msgid "Comments on"
+msgstr ""
+
+#: lj-xp.php:693
+msgid "Comments off"
+msgstr ""
+
+#: lj-xp.php:699
+msgid "Privacy"
+msgstr ""
+
+#: lj-xp.php:705
+msgid "Public post"
+msgstr ""
+
+#: lj-xp.php:709
+msgid "Private post"
+msgstr ""
+
+#: lj-xp.php:721
+msgid "Choose userpic: "
+msgstr ""
+
+#: lj-xp.php:723
+msgid "Use default"
+msgstr ""
+
+#: lj-xp.php:738
+msgid "Link text for LJ cut tag (if &lt;!--more--&gt; tag is used)"
+msgstr ""
+
+#: lj-xp.php:740
+msgid "Default: %s"
+msgstr ""
+
+#: lj-xp.php:797
+msgid "Deleted all entries from the other journal."
+msgstr ""
+
+#: lj-xp.php:809
+msgid "Posted all entries to the other journal."
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "LiveJournal Crossposter"
+msgstr ""
+
+#. #-#-#-#-#  plugin.pot (LiveJournal Crossposter 2.2)  #-#-#-#-#
+#. Plugin URI of the plugin/theme
+#. #-#-#-#-#  plugin.pot (LiveJournal Crossposter 2.2)  #-#-#-#-#
+#. Author URI of the plugin/theme
+msgid "http://code.google.com/p/ljxp/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid ""
+"Automatically copies all posts to a LiveJournal or other LiveJournal-based "
+"blog. Editing or deleting a post will be replicated as well."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Arseniy Ivanov, Evan Broder, Corey DeGrandchamp, Stephanie Leary"
+msgstr ""
