@@ -4,7 +4,7 @@ Donate link: http://code.google.com/p/ljxp/
 Tags: livejournal, lj, crosspost
 Requires at least: 2.8
 Tested up to: 3.3
-Stable tag: 2.3
+Stable tag: 2.3.1
 
 Automatically crossposts your WP entries to your LiveJournal or LJ-based clone.
 
@@ -39,6 +39,8 @@ LJ-XP automatically crossposts blog entries to your LiveJournal (or LiveJournal-
 See the <a href="http://code.google.com/p/ljxp/wiki/FAQ">FAQ on the Google Code wiki</a>.
 
 == Changelog ==
+= 2.3.1 =
+* Turned off the debug mode that was accidentally left on in 2.3. My apologies!
 
 = 2.3 =
 * Added support for custom friends groups. (<a href="http://code.google.com/p/ljxp/issues/detail?id=37">#37</a>)
@@ -111,3 +113,6 @@ See the <a href="http://code.google.com/p/ljxp/wiki/FAQ">FAQ on the Google Code 
 
 = 2.3 =
 * Support for custom friends groups! Fixed the backdate problem on entries that were edited after being crossposted; these now appear in friends lists as usual.
+
+= 2.3.1 =
+* Turned off the debug mode that was accidentally left on in 2.3. My apologies!

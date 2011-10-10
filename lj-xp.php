@@ -3,7 +3,7 @@
 Plugin Name: LiveJournal Crossposter
 Plugin URI: http://code.google.com/p/ljxp/
 Description: Automatically copies all posts to a LiveJournal or other LiveJournal-based blog. Editing or deleting a post will be replicated as well.
-Version: 2.3
+Version: 2.3.1
 Author: Arseniy Ivanov, Evan Broder, Corey DeGrandchamp, Stephanie Leary
 Author URI: http://code.google.com/p/ljxp/
 */
@@ -91,7 +91,7 @@ function ljxp_post($post_id, $bulk = false) {
 
 	// And create our connection
 	$client = new IXR_Client($options['host'], '/interface/xmlrpc');
-	$client->debug = true;
+	//$client->debug = true;
 
 	// Get the challenge string
 	// Using challenge for the most security. Allows pwd hash to be stored instead of pwd
