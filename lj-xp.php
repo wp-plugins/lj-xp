@@ -3,7 +3,7 @@
 Plugin Name: LiveJournal Crossposter
 Plugin URI: http://code.google.com/p/ljxp/
 Description: Automatically copies all posts to a LiveJournal or other LiveJournal-based blog. Editing or deleting a post will be replicated as well.
-Version: 2.3.1
+Version: 2.3.2
 Author: Arseniy Ivanov, Evan Broder, Corey DeGrandchamp, Stephanie Leary
 Author URI: http://code.google.com/p/ljxp/
 */
@@ -55,8 +55,8 @@ function ljxp_post($post_id, $bulk = false) {
 		}
 	}
 	$comments = get_post_meta($post->ID, 'ljxp_comments', true);
-	if (isset($comments)) $options['comments'] = $comments;
-		if ($options['comments'] == 2) $options['comments'] = 0;
+	if (isset($comments) && !empty($comments)) $options['comments'] = $comments;
+	if ($options['comments'] == 2) $options['comments'] = 0;
 	$options['userpic'] = get_post_meta($post->ID, 'ljxp_userpic', true);
 
 	if (!is_array($options['skip_cats'])) $options['skip_cats'] = array();
@@ -289,7 +289,7 @@ function ljxp_post($post_id, $bulk = false) {
 					'hour'				=> date('G', $date),
 					'min'				=> date('i', $date),
 					'props'				=> array(
-												'opt_nocomments'	=> !$options['comments'], 		// allow comments?
+												'opt_nocomments'	=> ( $options['comments'] == 1 ) ? 0 : 1,            // allow comments?
 												'opt_preformatted'	=> true, 						// event text is preformatted
 												'opt_backdated'		=> $bulk,	 					// if true, posts will not appear in friends lists
 												'taglist'			=> ($options['tag'] != 0 ? $cat_string : ''),
@@ -560,7 +560,7 @@ function ljxp_fix_relative_links($content) {
 			$site = site_url();
 
 		foreach ($hrefs as $href) {
-			if (preg_match('/^http:\/\//', $href)) { 
+			if (preg_match('/^https?:\/\//', $href)) { 
 				$linkpath = $href; // no change			
 			}
 			// href="/images/foo"

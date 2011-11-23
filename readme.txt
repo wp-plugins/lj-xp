@@ -4,7 +4,7 @@ Donate link: http://code.google.com/p/ljxp/
 Tags: livejournal, lj, crosspost
 Requires at least: 2.8
 Tested up to: 3.3
-Stable tag: 2.3.1
+Stable tag: 2.3.2
 
 Automatically crossposts your WP entries to your LiveJournal or LJ-based clone.
 
@@ -39,6 +39,10 @@ LJ-XP automatically crossposts blog entries to your LiveJournal (or LiveJournal-
 See the <a href="http://code.google.com/p/ljxp/wiki/FAQ">FAQ on the Google Code wiki</a>.
 
 == Changelog ==
+= 2.3.2 =
+* Fixed yet another bug in the per-post comments settings. (<a href="http://code.google.com/p/ljxp/issues/detail?id=149">#149</a>)
+* Fixed the relative link function to correctly ignore https URLs. (<a href="http://code.google.com/p/ljxp/issues/detail?id=148">#148</a>)
+
 = 2.3.1 =
 * Turned off the debug mode that was accidentally left on in 2.3. My apologies!
 
@@ -116,3 +120,6 @@ See the <a href="http://code.google.com/p/ljxp/wiki/FAQ">FAQ on the Google Code 
 
 = 2.3.1 =
 * Turned off the debug mode that was accidentally left on in 2.3. My apologies!
+
+= 2.3.2 =
+* Bug fixes for https URLs and comments settings.
