@@ -301,7 +301,8 @@ function ljxp_post($post_id, $bulk = false) {
 	// Set the privacy level according to the settings
 	if (!isset($privacy) || empty($privacy))
 		$privacy = $options['privacy'];
-	$allowmask = $options['allowmask_public'];
+	if (isset($options['allowmask_public']))
+		$allowmask = $options['allowmask_public'];
 	if ($post->post_status == 'private') {
 		$privacy = $options['privacy_private'];
 		$allowmask = $options['allowmask_private'];
@@ -925,6 +926,5 @@ if (!empty($options)) {
 }
 
 // i18n
-$plugin_dir = basename(dirname(__FILE__)). '/lang';
-load_plugin_textdomain( 'lj-xp', 'wp-content/plugins/' . $plugin_dir, $plugin_dir );
+load_plugin_textdomain( 'lj-xp', false, plugin_dir_path(__FILE__) . '/lang' );
 ?>

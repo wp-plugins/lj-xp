@@ -1,9 +1,11 @@
 === Plugin Name ===
 Contributors: sillybean, CorneliousJD, freeatnet, Evan Broder
-Donate link: http://code.google.com/p/ljxp/
+Donate link: http://stephanieleary.com/code/wordpress/lj-xp/
+Text Domain: lj-xp
+Domain Path: /languages
 Tags: livejournal, lj, crosspost
 Requires at least: 2.8
-Tested up to: 3.3
+Tested up to: 3.6
 Stable tag: 2.3.2
 
 Automatically crossposts your WP entries to your LiveJournal or LJ-based clone.
@@ -39,6 +41,9 @@ LJ-XP automatically crossposts blog entries to your LiveJournal (or LiveJournal-
 See the <a href="http://code.google.com/p/ljxp/wiki/FAQ">FAQ on the Google Code wiki</a>.
 
 == Changelog ==
+= 2.3.3 =
+* Fixed notices
+
 = 2.3.2 =
 * Fixed yet another bug in the per-post comments settings. (<a href="http://code.google.com/p/ljxp/issues/detail?id=149">#149</a>)
 * Fixed the relative link function to correctly ignore https URLs. (<a href="http://code.google.com/p/ljxp/issues/detail?id=148">#148</a>)

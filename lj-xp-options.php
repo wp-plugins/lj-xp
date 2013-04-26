@@ -136,7 +136,7 @@ function ljxp_validate_options($input) {
 		$msgtype = $groups['msgtype'];
 		unset($input['update_groups']);
 	}
-	else
+	elseif (isset($options['friendsgroups']))
 		$input['friendsgroups'] = $options['friendsgroups']; // preserve
 		
 	// Send custom updated message
@@ -154,12 +154,22 @@ function ljxp_validate_options($input) {
 // ---- Options Page -----
 
 function ljxp_add_pages() {
-	$pg = add_options_page("LiveJournal", "LiveJournal", 'manage_options', basename(__FILE__), 'ljxp_display_options');
-	add_action("admin_head-$pg", 'ljxp_settings_css');
+	global $ljxp_admin_page;
+	$ljxp_admin_page = add_options_page("LiveJournal", "LiveJournal", 'manage_options', basename(__FILE__), 'ljxp_display_options');
+	add_action("admin_head-$ljxp_admin_page", 'ljxp_settings_css');
 	// register setting
 	add_action( 'admin_init', 'register_ljxp_settings' );
 	
 	// Help screen 
+	add_action('load-'.$ljxp_admin_page, 'lj_xp_help');	
+}
+
+function lj_xp_help() {
+	global $ljxp_admin_page;
+	$screen = get_current_screen();
+	if ( $screen->id != $ljxp_admin_page )
+		return;
+	
 	$text = '<h3>'.__('How To', 'lj-xp')."</h3>
     <ul>
 		<li>" . sprintf(__('<a href="%s">Add a link to the LiveJournal post</a> in your WordPress theme', 'lj-xp' ), 'http://code.google.com/p/ljxp/wiki/LinkingToLJ')."</li>        
@@ -173,7 +183,11 @@ function ljxp_add_pages() {
 	$text .= '<li><a href="http://code.google.com/p/ljxp/issues/list">' . __( 'Bug Tracker', 'lj-xp' ) . '</a> &mdash; report problems here</li>';
 	$text .= '</ul>';
 
-	add_contextual_help( $pg, $text );	
+	$screen->add_help_tab( array(
+		'lj-xp-help',
+		'LiveJournal Crossposter Help',
+		$text
+	) );
 }
 
 // Add link to options page from plugin list
@@ -673,6 +687,7 @@ function ljxp_update_friendsgroups($username) {
 }
 
 function ljxp_update_userpics($username) {
+	$msg = '';
 	$msgtype = 'error';
 	
 	// We keep a flag if we should keep processing since there are multiple steps here
