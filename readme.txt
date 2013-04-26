@@ -6,7 +6,7 @@ Domain Path: /languages
 Tags: livejournal, lj, crosspost
 Requires at least: 2.8
 Tested up to: 3.6
-Stable tag: 2.3.2
+Stable tag: 2.3.3
 
 Automatically crossposts your WP entries to your LiveJournal or LJ-based clone.
 
